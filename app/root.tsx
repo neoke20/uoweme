@@ -137,7 +137,7 @@ export default function App() {
                   size="sm"
                 />
                 <Text component="a" href="/" fz="lg">
-                  I owe you
+                  U owe me
                 </Text>
               </Group>
             </AppShell.Header>

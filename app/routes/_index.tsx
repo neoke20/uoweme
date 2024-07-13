@@ -13,16 +13,20 @@ export const meta: MetaFunction = () => {
 };
 
 export async function loader() {
-  const users = await prisma.user.findMany();
-  return { users };
+  const user = await prisma.user.findUnique({
+    where: {
+      email: "kevin@k.com",
+    },
+  });
+  return { user };
 }
 
 export default function Index() {
-  const { users } = useLoaderData<typeof loader>();
-  console.log(users);
+  const { user } = useLoaderData<typeof loader>();
+  console.log(user);
   return (
     <Box>
-      <p>Index</p>
+      <p>Hi, {user?.name}</p>
     </Box>
   );
 }

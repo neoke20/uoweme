@@ -2,7 +2,6 @@ import {
   Text,
   Anchor,
   Button,
-  Checkbox,
   Container,
   Group,
   Paper,
@@ -11,15 +10,13 @@ import {
   Title,
   Stack,
 } from "@mantine/core";
-import classes from "~/style/AuthenticationTitle.module.css";
+// import classes from "~/style/AuthenticationTitle.module.css";
 
 export default function Login() {
   return (
     <Stack h={"100vh"} bg={"charcoal.6"} justify={"center"}>
       <Container>
-        <Title ta="center" className={classes.title}>
-          Welcome back!
-        </Title>
+        <Title ta="center">Welcome back!</Title>
         <Text c="white" size="sm" ta="center" mt={5}>
           Do not have an account yet?{" "}
           <Anchor c="white" td={"underline"} size="sm" component="button">

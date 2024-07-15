@@ -21,6 +21,7 @@ model User {
   username             String              @unique
   name                 String?
   surname              String?
+  isConfirmed          Boolean             @default(false)
   sentRequests         FriendshipRequest[] @relation("Sender")
   receivedRequests     FriendshipRequest[] @relation("Receiver")
   friendshipsInitiated Friendship[]        @relation("Initiator")

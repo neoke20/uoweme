@@ -8,7 +8,7 @@ import {
   Stack,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { Outlet } from "@remix-run/react";
+import { Form, Outlet } from "@remix-run/react";
 import { TbLogout2, TbSettings } from "react-icons/tb";
 
 export default function AppLayout() {
@@ -72,14 +72,15 @@ export default function AppLayout() {
             >
               Settings
             </Button>
-            <Button
-              onClick={toggle}
-              component="a"
-              color="vermilion.7"
-              leftSection={<TbLogout2 size={20} />}
-            >
-              Logout
-            </Button>
+            <Form method="post">
+              <Button
+                color="vermilion.7"
+                leftSection={<TbLogout2 size={20} />}
+                type="submit"
+              >
+                Logout
+              </Button>
+            </Form>
           </Stack>
         </Flex>
       </AppShell.Navbar>

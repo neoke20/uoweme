@@ -3,11 +3,12 @@
 import "@mantine/core/styles.css";
 
 import { cssBundleHref } from "@remix-run/css-bundle";
-import type { LinksFunction } from "@remix-run/node";
+import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import {
   Links,
   Meta,
   Outlet,
+  redirect,
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
@@ -17,10 +18,20 @@ import {
   createTheme,
   MantineColorsTuple,
 } from "@mantine/core";
+import { destroySession, getSession } from "./session.server";
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
 ];
+
+export const action = async ({ request }: LoaderFunctionArgs) => {
+  const session = await getSession(request.headers.get("Cookie"));
+  return redirect("/login", {
+    headers: {
+      "Set-Cookie": await destroySession(session),
+    },
+  });
+};
 
 const bittersweet: MantineColorsTuple = [
   "#ffeae7",

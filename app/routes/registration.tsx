@@ -13,6 +13,7 @@ import { useForm } from "@mantine/form";
 import { Form, json, useSubmit } from "@remix-run/react";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { createUserSession } from "~/auth.server";
 
 const prisma = new PrismaClient();
 
@@ -80,7 +81,15 @@ export async function action({ request }: { request: Request }) {
     },
   });
 
-  return user;
+  return createUserSession({
+    request,
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+    },
+    redirectTo: "/",
+  });
 }
 
 export default function Registration() {
@@ -88,6 +97,7 @@ export default function Registration() {
   const form = useForm({
     initialValues: {
       email: "",
+      username: "",
       password: "",
       passwordConfirmation: "",
     },

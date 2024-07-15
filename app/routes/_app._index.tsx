@@ -32,7 +32,7 @@ export default function Index() {
   const { user } = useLoaderData<typeof loader>();
   return (
     <Box>
-      <p>Hi, {user?.name}</p>
+      <p>Hi, {user?.username}</p>
     </Box>
   );
 }

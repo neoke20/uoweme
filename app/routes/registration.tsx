@@ -97,7 +97,6 @@ export default function Registration() {
   ) => {
     form.onSubmit(
       () => {
-        console.log(form.values);
         submit(event.currentTarget);
       },
       () => {

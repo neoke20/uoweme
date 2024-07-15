@@ -14,6 +14,7 @@ import { useForm } from "@mantine/form";
 import { Form, json, useSubmit } from "@remix-run/react";
 import { PrismaClient } from "@prisma/client";
 import { createUserSession } from "~/auth.server";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -28,7 +29,11 @@ export async function action({ request }: { request: Request }) {
   });
 
   function checkPassword(inputPassword: string) {
-    return inputPassword === user?.password;
+    const password_match = bcrypt.compareSync(
+      inputPassword,
+      user?.password as string
+    );
+    return password_match;
   }
 
   if (!checkPassword(password as string)) {
@@ -66,7 +71,6 @@ export default function Login() {
   const handleLoginFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     form.onSubmit(
       () => {
-        console.log(form.values);
         submit(event.currentTarget);
       },
       () => {

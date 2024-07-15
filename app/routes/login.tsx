@@ -10,13 +10,26 @@ import {
   Title,
   Stack,
 } from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { Form, json, useSubmit } from "@remix-run/react";
+import { useForm, zodResolver } from "@mantine/form";
+import { Form, json, useActionData, useSubmit } from "@remix-run/react";
 import { PrismaClient } from "@prisma/client";
 import { createUserSession } from "~/auth.server";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 
 const prisma = new PrismaClient();
+
+const loginFormValidation = z.object({
+  email: z.string().email({ message: "Invalid email address" }),
+  password: z
+    .string()
+    .min(8, { message: "password should be 8 characters long" }),
+});
+
+interface ActionData {
+  type: string;
+  message: string;
+}
 
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
@@ -27,6 +40,18 @@ export async function action({ request }: { request: Request }) {
       email: email as string,
     },
   });
+
+  if (!user) {
+    return json(
+      {
+        type: "userNotFound",
+        message: "User not found",
+      },
+      {
+        status: 401,
+      }
+    );
+  }
 
   function checkPassword(inputPassword: string) {
     const password_match = bcrypt.compareSync(
@@ -60,8 +85,10 @@ export async function action({ request }: { request: Request }) {
 }
 
 export default function Login() {
+  const action = useActionData<ActionData>();
   const submit = useSubmit();
   const form = useForm({
+    validate: zodResolver(loginFormValidation),
     initialValues: {
       email: "",
       password: "",
@@ -82,7 +109,7 @@ export default function Login() {
 
   return (
     <Stack h={"100vh"} bg={"charcoal.6"} justify={"center"}>
-      <Container>
+      <Container miw={"90%"}>
         <Title ta="center">Welcome back!</Title>
         <Text c="white" size="sm" ta="center" mt={5}>
           Do not have an account yet?{" "}
@@ -106,6 +133,11 @@ export default function Login() {
               {...form.getInputProps("email")}
               required
             />
+            {action && action.type === "userNotFound" ? (
+              <Text my={"xs"} c="vermilion.7" size="sm">
+                {action.message}
+              </Text>
+            ) : null}
             <PasswordInput
               label="Password"
               placeholder="Your password"
@@ -114,6 +146,11 @@ export default function Login() {
               required
               mt="md"
             />
+            {action && action.type === "wrongPassword" ? (
+              <Text my={"xs"} c="vermilion.7" size="sm">
+                {action.message}
+              </Text>
+            ) : null}
             <Group justify="space-between" mt="lg">
               <Anchor component="button" size="sm">
                 Forgot password?

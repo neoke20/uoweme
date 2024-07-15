@@ -110,7 +110,6 @@ export async function action({ request }: { request: Request }) {
 
 export default function Registration() {
   const action = useActionData<ActionData>();
-  console.log("ACTION", action);
   const submit = useSubmit();
   const form = useForm({
     validate: zodResolver(registrationFormValidation),

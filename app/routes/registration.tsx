@@ -10,7 +10,13 @@ import {
   Stack,
 } from "@mantine/core";
 import { useForm, zodResolver } from "@mantine/form";
-import { Form, json, useActionData, useSubmit } from "@remix-run/react";
+import {
+  Form,
+  json,
+  useActionData,
+  useSubmit,
+  useNavigation,
+} from "@remix-run/react";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { createUserSession } from "~/auth.server";
@@ -111,6 +117,8 @@ export async function action({ request }: { request: Request }) {
 export default function Registration() {
   const action = useActionData<ActionData>();
   const submit = useSubmit();
+  const navigation = useNavigation();
+  const submitting = navigation.state === "submitting";
   const form = useForm({
     validate: zodResolver(registrationFormValidation),
     initialValues: {
@@ -192,8 +200,19 @@ export default function Registration() {
               required
               mt="md"
             />
+            {action && action.type === "passwordMismatch" ? (
+              <Text my={"xs"} c="vermilion.7" size="sm">
+                {action.message}
+              </Text>
+            ) : null}
 
-            <Button fullWidth mt={"xl"} color="platinum.8" type="submit">
+            <Button
+              fullWidth
+              mt={"xl"}
+              color="platinum.8"
+              type="submit"
+              loading={submitting}
+            >
               Sign in
             </Button>
           </Form>

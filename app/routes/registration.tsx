@@ -9,13 +9,29 @@ import {
   Title,
   Stack,
 } from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { Form, json, useSubmit } from "@remix-run/react";
+import { useForm, zodResolver } from "@mantine/form";
+import { Form, json, useActionData, useSubmit } from "@remix-run/react";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { createUserSession } from "~/auth.server";
+import { z } from "zod";
 
 const prisma = new PrismaClient();
+
+const registrationFormValidation = z.object({
+  email: z.string().email({ message: "Invalid email address" }),
+  username: z
+    .string()
+    .min(3, { message: "Username must be at least 3 characters long" }),
+  password: z
+    .string()
+    .min(8, { message: "password must be at least 8 characters long" }),
+});
+
+interface ActionData {
+  type: string;
+  message: string;
+}
 
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
@@ -93,8 +109,11 @@ export async function action({ request }: { request: Request }) {
 }
 
 export default function Registration() {
+  const action = useActionData<ActionData>();
+  console.log("ACTION", action);
   const submit = useSubmit();
   const form = useForm({
+    validate: zodResolver(registrationFormValidation),
     initialValues: {
       email: "",
       username: "",
@@ -117,7 +136,7 @@ export default function Registration() {
   };
   return (
     <Stack h={"100vh"} bg={"charcoal.6"} justify={"center"}>
-      <Container>
+      <Container miw={"90%"}>
         <Title ta="center">Create an account</Title>
         <Text c="white" size="sm" ta="center" mt={5}>
           Already have an account?{" "}
@@ -141,6 +160,11 @@ export default function Registration() {
               {...form.getInputProps("email")}
               required
             />
+            {action && action.type === "userEmailExists" ? (
+              <Text my={"xs"} c="vermilion.7" size="sm">
+                {action.message}
+              </Text>
+            ) : null}
             <TextInput
               label="Username"
               placeholder="uoweme"
@@ -148,6 +172,11 @@ export default function Registration() {
               {...form.getInputProps("username")}
               required
             />
+            {action && action.type === "usernameExists" ? (
+              <Text my={"xs"} c="vermilion.7" size="sm">
+                {action.message}
+              </Text>
+            ) : null}
             <PasswordInput
               label="Password"
               placeholder="Your password"
@@ -164,7 +193,8 @@ export default function Registration() {
               required
               mt="md"
             />
-            <Button fullWidth mt="xl" color="platinum.8" type="submit">
+
+            <Button fullWidth mt={"xl"} color="platinum.8" type="submit">
               Sign in
             </Button>
           </Form>

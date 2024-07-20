@@ -63,12 +63,19 @@ export default function Settings() {
   return (
     <Box>
       <Form method="post" onSubmit={handleSettingsFormSubmit}>
-        <TextInput label="Name" name="name" {...form.getInputProps("name")} />
         <TextInput
-          label="Surname"
+          label="Name"
+          placeholder="your name"
+          name="name"
+          {...form.getInputProps("name")}
+        />
+        <TextInput
+          label="Family Name"
+          placeholder="your name"
           name="surname"
           {...form.getInputProps("surname")}
         />
+
         <Button color="charcoal.4" my={"md"} type="submit">
           Save
         </Button>

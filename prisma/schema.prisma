@@ -21,6 +21,7 @@ model User {
   username             String              @unique
   name                 String?
   surname              String?
+  isConfirmed          Boolean             @default(false)
   sentRequests         FriendshipRequest[] @relation("Sender")
   receivedRequests     FriendshipRequest[] @relation("Receiver")
   friendshipsInitiated Friendship[]        @relation("Initiator")
@@ -30,12 +31,12 @@ model User {
 }
 
 model Friendship {
-  id          Int @id @default(autoincrement())
-  initiatorId Int
-  receiverId  Int
+  id     Int @id @default(autoincrement())
+  userId Int
+  friend Int
 
-  initiator User     @relation("Initiator", fields: [initiatorId], references: [id])
-  receiver  User     @relation("Receiver", fields: [receiverId], references: [id])
+  initiator User     @relation("Initiator", fields: [userId], references: [id])
+  receiver  User     @relation("Receiver", fields: [friend], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

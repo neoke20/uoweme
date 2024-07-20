@@ -3,6 +3,8 @@ import {
   Box,
   Button,
   Card,
+  Flex,
+  Drawer,
   Stack,
   Text,
   TextInput,
@@ -12,6 +14,9 @@ import { Form, json, useActionData, useLoaderData } from "@remix-run/react";
 import { requireUser } from "~/auth.server";
 import { FiAlertCircle, FiAtSign } from "react-icons/fi";
 import UserCard, { UserProps } from "~/components/UserCard";
+import { useDisclosure } from "@mantine/hooks";
+import { useState } from "react";
+import FriendshipRequestSentDrawer from "~/components/FriendshipRequestSentDrawer";
 
 const prisma = new PrismaClient();
 
@@ -19,6 +24,23 @@ interface actionDataProps {
   type: string;
   user?: UserProps;
 }
+
+interface RequestProps {
+  createdAt: string;
+  id: number;
+  receiver: {
+    name: string;
+    surname: string;
+    username: string;
+  };
+  senderId: number;
+  status: string;
+  updatedAt: string;
+}
+
+export type FriendshipRequestSentProps = {
+  requests: RequestProps[];
+};
 
 export async function loader({ request }: { request: Request }) {
   const sessionUser = await requireUser(request);
@@ -36,7 +58,26 @@ export async function loader({ request }: { request: Request }) {
       },
     },
   });
-  return { friendships };
+
+  const friendshipRequestsSent = await prisma.friendshipRequest.findMany({
+    where: {
+      senderId: sessionUser.userId,
+      status: "PENDING",
+    },
+    include: {
+      receiver: {
+        select: {
+          id: true,
+          username: true,
+          surname: true,
+          name: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
+
+  return { friendships, friendshipRequestsSent };
 }
 
 export async function action({ request }: { request: Request }) {
@@ -110,17 +151,53 @@ export async function action({ request }: { request: Request }) {
       return json({ friendshipRequest });
     }
   }
+
+  if (formId === "cancelFriendshipRequest") {
+    const friendshipRequestId = formData.get("friendshipRequestId");
+    await prisma.friendshipRequest.delete({
+      where: {
+        id: parseInt(friendshipRequestId as unknown as string),
+      },
+    });
+    return json({ friendshipRequestId });
+  }
 }
 
 export default function Friends() {
-  const { friendships } = useLoaderData<typeof loader>();
+  const { friendships, friendshipRequestsSent } =
+    useLoaderData<typeof loader>();
   const actionData = useActionData<actionDataProps>();
-  console.log(actionData);
-  console.log(friendships);
+  console.log(friendshipRequestsSent);
   const alertIcon = <FiAlertCircle />;
   const atSignIcon = <FiAtSign />;
+
+  const [opened, { open, close }] = useDisclosure(false);
+  const [drawerContent, setDrawerContent] = useState<DrawerContent>();
+  type DrawerContent = React.ReactElement;
+
+  const handleDrawerOpen = (content: DrawerContent) => {
+    setDrawerContent(content);
+    open();
+  };
   return (
     <Box>
+      {friendshipRequestsSent.length > 0 ? (
+        <Flex justify="flex-end">
+          <Button
+            color="platinum.4"
+            onClick={() =>
+              handleDrawerOpen(
+                <FriendshipRequestSentDrawer
+                  requests={friendshipRequestsSent as RequestProps[]}
+                  close={close}
+                />
+              )
+            }
+          >
+            Requests pending
+          </Button>
+        </Flex>
+      ) : null}
       <Form method="post">
         <input hidden name="formId" defaultValue="searchFriends" />
         <TextInput
@@ -191,6 +268,9 @@ export default function Friends() {
           You do not have any friends at the moment
         </Alert>
       )}
+      <Drawer opened={opened} onClose={close}>
+        {drawerContent}
+      </Drawer>
     </Box>
   );
 }

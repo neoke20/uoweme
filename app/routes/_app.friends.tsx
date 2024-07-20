@@ -17,6 +17,7 @@ import UserCard, { UserProps } from "~/components/UserCard";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
 import FriendshipRequestSentDrawer from "~/components/FriendshipRequestSentDrawer";
+import FriendshipRequestReceivedDrawer from "~/components/FriendshipRequestReceivedDrawer";
 
 const prisma = new PrismaClient();
 
@@ -25,7 +26,7 @@ interface actionDataProps {
   user?: UserProps;
 }
 
-interface RequestProps {
+interface RequestSentProps {
   createdAt: string;
   id: number;
   receiver: {
@@ -37,9 +38,26 @@ interface RequestProps {
   status: string;
   updatedAt: string;
 }
+interface RequestReceivedProps {
+  createdAt: string;
+  id: number;
+  sender: {
+    id: number;
+    name: string;
+    surname: string;
+    username: string;
+  };
+  senderId: number;
+  status: string;
+  updatedAt: string;
+}
 
 export type FriendshipRequestSentProps = {
-  requests: RequestProps[];
+  requests: RequestSentProps[];
+};
+
+export type FriendshipRequestReceivedProps = {
+  requests: RequestReceivedProps[];
 };
 
 export async function loader({ request }: { request: Request }) {
@@ -77,7 +95,25 @@ export async function loader({ request }: { request: Request }) {
     },
   });
 
-  return { friendships, friendshipRequestsSent };
+  const friendshipRequestsReceived = await prisma.friendshipRequest.findMany({
+    where: {
+      receiverId: sessionUser.userId,
+      status: "PENDING",
+    },
+    include: {
+      sender: {
+        select: {
+          id: true,
+          username: true,
+          surname: true,
+          name: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
+
+  return { friendships, friendshipRequestsSent, friendshipRequestsReceived };
 }
 
 export async function action({ request }: { request: Request }) {
@@ -161,13 +197,41 @@ export async function action({ request }: { request: Request }) {
     });
     return json({ friendshipRequestId });
   }
+
+  if (formId === "acceptFriendshipRequest") {
+    const requestSenderId = formData.get("requestSenderId");
+    const friendshipRequestId = formData.get("friendshipRequestId");
+    await prisma.friendshipRequest.update({
+      where: {
+        id: parseInt(friendshipRequestId as unknown as string),
+      },
+      data: {
+        status: "ACCEPTED",
+      },
+    });
+    await prisma.friendship.create({
+      data: {
+        userId: currentUser.userId,
+        friend: parseInt(requestSenderId as unknown as string),
+        updatedAt: new Date(),
+      },
+    });
+    await prisma.friendship.create({
+      data: {
+        userId: parseInt(requestSenderId as unknown as string),
+        friend: currentUser.userId,
+        updatedAt: new Date(),
+      },
+    });
+    return json({ friendshipRequestId });
+  }
 }
 
 export default function Friends() {
-  const { friendships, friendshipRequestsSent } =
+  const { friendships, friendshipRequestsSent, friendshipRequestsReceived } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<actionDataProps>();
-  console.log(friendshipRequestsSent);
+  console.log({ friendshipRequestsSent, friendshipRequestsReceived });
   const alertIcon = <FiAlertCircle />;
   const atSignIcon = <FiAtSign />;
 
@@ -181,37 +245,60 @@ export default function Friends() {
   };
   return (
     <Box>
-      {friendshipRequestsSent.length > 0 ? (
-        <Flex justify="flex-end">
-          <Button
-            color="platinum.4"
-            onClick={() =>
-              handleDrawerOpen(
-                <FriendshipRequestSentDrawer
-                  requests={friendshipRequestsSent as RequestProps[]}
-                  close={close}
-                />
-              )
-            }
-          >
-            Requests pending
+      <Flex justify="space-between" mb="md">
+        {friendshipRequestsReceived.length > 0 ? (
+          <Flex justify="flex-end">
+            <Button
+              color="platinum.4"
+              onClick={() =>
+                handleDrawerOpen(
+                  <FriendshipRequestReceivedDrawer
+                    requests={
+                      friendshipRequestsReceived as RequestReceivedProps[]
+                    }
+                    close={close}
+                  />
+                )
+              }
+            >
+              Requests received
+            </Button>
+          </Flex>
+        ) : null}
+        {friendshipRequestsSent.length > 0 ? (
+          <Flex justify="flex-end">
+            <Button
+              color="platinum.4"
+              onClick={() =>
+                handleDrawerOpen(
+                  <FriendshipRequestSentDrawer
+                    requests={friendshipRequestsSent as RequestSentProps[]}
+                    close={close}
+                  />
+                )
+              }
+            >
+              Requests pending
+            </Button>
+          </Flex>
+        ) : null}
+      </Flex>
+      <Card radius="md" shadow="md" bg="platinum.1">
+        <Form method="post">
+          <input hidden name="formId" defaultValue="searchFriends" />
+          <TextInput
+            label="Search for friends"
+            description="You can find friends searching for their usernames"
+            placeholder="username"
+            name="username"
+            leftSectionPointerEvents="none"
+            leftSection={atSignIcon}
+          />
+          <Button my="sm" type="submit" color="platinum.4" fullWidth>
+            Search for a friend
           </Button>
-        </Flex>
-      ) : null}
-      <Form method="post">
-        <input hidden name="formId" defaultValue="searchFriends" />
-        <TextInput
-          label="Search for friends"
-          description="You can find friends searching for their usernames"
-          placeholder="username"
-          name="username"
-          leftSectionPointerEvents="none"
-          leftSection={atSignIcon}
-        />
-        <Button my="sm" type="submit" color="platinum.4" fullWidth>
-          Search for a friend
-        </Button>
-      </Form>
+        </Form>
+      </Card>
       {actionData?.type === "userNotFound" ? (
         <Alert my="md" color="charcoal.2" icon={alertIcon}>
           User not found :(
@@ -253,7 +340,9 @@ export default function Friends() {
       ) : null}
       {friendships.length > 0 ? (
         <Box>
-          <Text>You are friends with:</Text>
+          <Text ta="center" my="md">
+            You are friends with:
+          </Text>
           {friendships.map((friendship) => (
             <Box key={friendship.id}>
               <UserCard

@@ -48,7 +48,7 @@ export async function action({ request }: { request: Request }) {
   if (formId === "searchFriends") {
     const user = await prisma.user.findUnique({
       where: {
-        username: username?.toString().toLocaleLowerCase(),
+        username: username?.toString().toLowerCase(),
       },
       select: {
         id: true,

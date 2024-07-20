@@ -1,6 +1,7 @@
 import { Text, Flex, Card } from "@mantine/core";
 
 export type UserProps = {
+  id?: number;
   username: string;
   name?: string;
   surname?: string;

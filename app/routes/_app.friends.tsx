@@ -15,6 +15,11 @@ import UserCard, { UserProps } from "~/components/UserCard";
 
 const prisma = new PrismaClient();
 
+interface actionDataProps {
+  type: string;
+  user?: UserProps;
+}
+
 export async function loader({ request }: { request: Request }) {
   const sessionUser = await requireUser(request);
   const friendships = await prisma.friendship.findMany({
@@ -39,47 +44,77 @@ export async function action({ request }: { request: Request }) {
   const username = formData.get("username");
   const formId = formData.get("formId");
   const currentUser = await requireUser(request);
-  const user = await prisma.user.findUnique({
-    where: {
-      username: username?.toString().toLocaleLowerCase(),
-    },
-    select: {
-      id: true,
-      username: true,
-      name: true,
-      surname: true,
-    },
-  });
-  if (!user) {
-    return json(
-      {
-        type: "userNotFound",
-      },
-      {
-        status: 401,
-      }
-    );
-  }
-
-  if (user.id === currentUser.userId) {
-    return json(
-      {
-        type: "userIsCurrentUser",
-      },
-      {
-        status: 401,
-      }
-    );
-  }
-
+  const friendshipUserId = formData.get("friendshipUserId");
   if (formId === "searchFriends") {
+    const user = await prisma.user.findUnique({
+      where: {
+        username: username?.toString().toLocaleLowerCase(),
+      },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        surname: true,
+      },
+    });
+    if (!user) {
+      return json(
+        {
+          type: "userNotFound",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    if (user.id === currentUser.userId) {
+      return json(
+        {
+          type: "userIsCurrentUser",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
     return { user, currentUser };
+  }
+
+  if (formId === "sendFriendshipRequest") {
+    const existingRequest = await prisma.friendshipRequest.findFirst({
+      where: {
+        senderId: currentUser.userId,
+        receiverId: parseInt(friendshipUserId as unknown as string),
+      },
+    });
+    if (existingRequest) {
+      return json(
+        {
+          type: "friendshipRequestAlreadySent",
+        },
+        {
+          status: 401,
+        }
+      );
+    } else {
+      const friendshipRequest = await prisma.friendshipRequest.create({
+        data: {
+          senderId: currentUser.userId,
+          receiverId: parseInt(friendshipUserId as unknown as string),
+          status: "PENDING",
+          createdAt: new Date(),
+        },
+      });
+      return json({ friendshipRequest });
+    }
   }
 }
 
 export default function Friends() {
   const { friendships } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  const actionData = useActionData<actionDataProps>();
   console.log(actionData);
   console.log(friendships);
   const alertIcon = <FiAlertCircle />;
@@ -105,7 +140,9 @@ export default function Friends() {
           User not found :(
         </Alert>
       ) : actionData?.type === "userIsCurrentUser" ? (
-        <div>Hey, that's you!!!</div>
+        <Text ta="center" p="md" bg="platinum.6" c="white">
+          You are your own best friend already, you silly goose!
+        </Text>
       ) : actionData?.user ? (
         <Card radius="md" shadow="md">
           <Stack align="center" gap="sm">
@@ -119,11 +156,16 @@ export default function Friends() {
                 )
               </>
             ) : null}
-            <Form>
+            <Form method="post">
               <input
                 hidden
                 name="formId"
                 defaultValue="sendFriendshipRequest"
+              />
+              <input
+                hidden
+                name="friendshipUserId"
+                defaultValue={actionData.user.id}
               />
               <Button type="submit" color="platinum.4">
                 Send Friendship Request

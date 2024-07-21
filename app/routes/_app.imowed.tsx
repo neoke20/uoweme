@@ -1,12 +1,21 @@
-import { Box, Button, Center, Container, Modal, Title } from "@mantine/core";
+import {
+  Box,
+  Button,
+  Container,
+  Drawer,
+  Modal,
+  Stack,
+  Title,
+} from "@mantine/core";
 import { PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
 import { requireUser } from "~/auth.server";
 import DebtCard from "~/components/DebtCard";
-import { FiPlus } from "react-icons/fi";
+import { FiPlus, FiInfo } from "react-icons/fi";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
 import DebtRequestCard from "~/components/DebtRequestCard";
+import PendingRequestDrawer from "~/components/PendingRequestDrawer";
 const prisma = new PrismaClient();
 
 export type CreditProps = {
@@ -65,7 +74,20 @@ export async function loader({ request }: { request: Request }) {
     },
   });
 
-  return { creditList, friends };
+  const pendingCreditList = await prisma.debtRequest.findMany({
+    where: {
+      creditorId: sessionUser.userId,
+    },
+    include: {
+      debtor: {
+        select: {
+          username: true,
+        },
+      },
+    },
+  });
+
+  return { creditList, friends, pendingCreditList };
 }
 
 export async function action({ request }: { request: Request }) {
@@ -87,7 +109,10 @@ export async function action({ request }: { request: Request }) {
 }
 
 export default function Imowed() {
-  const { creditList, friends } = useLoaderData<typeof loader>();
+  const { creditList, friends, pendingCreditList } =
+    useLoaderData<typeof loader>();
+
+  console.log(pendingCreditList);
 
   const [opened, { open, close }] = useDisclosure(false);
   const [modalContent, setModalContent] = useState<ModalContent>();
@@ -97,6 +122,17 @@ export default function Imowed() {
     setModalContent(content);
     open();
   };
+
+  const [openedDrawer, { open: openDrawer, close: closeDrawer }] =
+    useDisclosure(false);
+  const [drawerContent, setDrawerContent] = useState<DrawerContent>();
+  type DrawerContent = React.ReactElement;
+
+  const handleDrawerOpen = (content: DrawerContent) => {
+    setDrawerContent(content);
+    openDrawer();
+  };
+
   return (
     <Box>
       {creditList.length > 0 ? (
@@ -104,8 +140,26 @@ export default function Imowed() {
           <Title order={2} ta="center" my="md">
             What people owe you
           </Title>
-          <Center>
+          <Stack justify="center" gap="md">
+            {pendingCreditList.length > 0 ? (
+              <Button
+                fullWidth
+                color="platinum.4"
+                leftSection={<FiInfo />}
+                onClick={() =>
+                  handleDrawerOpen(
+                    <PendingRequestDrawer
+                      requests={pendingCreditList}
+                      close={closeDrawer}
+                    />
+                  )
+                }
+              >
+                Pending Requests
+              </Button>
+            ) : null}
             <Button
+              fullWidth
               color="platinum.4"
               leftSection={<FiPlus />}
               onClick={() =>
@@ -117,9 +171,9 @@ export default function Imowed() {
                 )
               }
             >
-              Send Debt Request
+              Send Request
             </Button>
-          </Center>
+          </Stack>
           {creditList.map((credit) => (
             <DebtCard key={credit.id} details={credit as CreditProps} />
           ))}
@@ -128,6 +182,13 @@ export default function Imowed() {
       <Modal opened={opened} onClose={close} centered title="Debt Request">
         {modalContent}
       </Modal>
+      <Drawer
+        opened={openedDrawer}
+        onClose={closeDrawer}
+        title="Pending Requests"
+      >
+        {drawerContent}
+      </Drawer>
     </Box>
   );
 }

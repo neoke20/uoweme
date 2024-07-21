@@ -1,8 +1,12 @@
-import { Box, Container, Title } from "@mantine/core";
-import { PrismaClient } from "@prisma/client";
+import { Box, Button, Center, Container, Modal, Title } from "@mantine/core";
+import { Currency, PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
 import { requireUser } from "~/auth.server";
 import DebtCard from "~/components/DebtCard";
+import { FiPlus } from "react-icons/fi";
+import { useDisclosure } from "@mantine/hooks";
+import { useState } from "react";
+import DebtRequestCard from "~/components/DebtRequestCard";
 const prisma = new PrismaClient();
 
 export type CreditProps = {
@@ -23,6 +27,13 @@ export type CreditProps = {
   updatedAt: string;
 };
 
+export type FriendsProps = {
+  receiver: {
+    id: number;
+    username: string;
+  };
+};
+
 export async function loader({ request }: { request: Request }) {
   const sessionUser = await requireUser(request);
   const creditList = await prisma.debt.findMany({
@@ -40,7 +51,21 @@ export async function loader({ request }: { request: Request }) {
     },
   });
 
-  return { creditList };
+  const friends = await prisma.friendship.findMany({
+    where: {
+      userId: sessionUser.userId,
+    },
+    include: {
+      receiver: {
+        select: {
+          id: true,
+          username: true,
+        },
+      },
+    },
+  });
+
+  return { creditList, friends };
 }
 
 export async function action({ request }: { request: Request }) {
@@ -58,12 +83,43 @@ export async function action({ request }: { request: Request }) {
       status: 303,
       headers: { Location: "/imowed" },
     });
+  } else if (formId === "sendDebtRequest") {
+    console.log("SEND DEBT REQUEST");
+    const { receiver, amount, currency, title, description } =
+      Object.fromEntries(Array.from(formData.entries()));
+    const sessionUser = await requireUser(request);
+    // await prisma.debtRequest.create({
+    //   data: {
+    //     amount: Number(amount),
+    //     currency: currency as Currency,
+    //     title: title as string,
+    //     description: description as string,
+    //     creditorId: sessionUser.userId,
+    //     debtorId: Number(receiver),
+    //   },
+    // });
+    return new Response(null, {
+      status: 303,
+      headers: { Location: "/imowed" },
+    });
+  } else {
+    console.log("Unknown formId", formId);
+    return null;
   }
 }
 
 export default function Imowed() {
-  const { creditList } = useLoaderData<typeof loader>();
-  console.log(creditList);
+  const { creditList, friends } = useLoaderData<typeof loader>();
+  console.log({ creditList, friends });
+
+  const [opened, { open, close }] = useDisclosure(false);
+  const [modalContent, setModalContent] = useState<ModalContent>();
+  type ModalContent = React.ReactElement;
+
+  const handleModalOpen = (content: ModalContent) => {
+    setModalContent(content);
+    open();
+  };
   return (
     <Box>
       {creditList.length > 0 ? (
@@ -71,11 +127,30 @@ export default function Imowed() {
           <Title order={2} ta="center" my="md">
             What people owe you
           </Title>
+          <Center>
+            <Button
+              color="platinum.4"
+              leftSection={<FiPlus />}
+              onClick={() =>
+                handleModalOpen(
+                  <DebtRequestCard
+                    friends={friends as FriendsProps[]}
+                    close={close}
+                  />
+                )
+              }
+            >
+              Send Debt Request
+            </Button>
+          </Center>
           {creditList.map((credit) => (
             <DebtCard key={credit.id} details={credit as CreditProps} />
           ))}
         </Container>
       ) : null}
+      <Modal opened={opened} onClose={close} centered title="Debt Request">
+        {modalContent}
+      </Modal>
     </Box>
   );
 }

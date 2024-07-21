@@ -15,19 +15,24 @@ datasource db {
 }
 
 model User {
-  id                   Int                 @id @default(autoincrement())
-  email                String              @unique
-  password             String
-  username             String              @unique
-  name                 String?
-  surname              String?
-  isConfirmed          Boolean             @default(false)
-  sentRequests         FriendshipRequest[] @relation("Sender")
-  receivedRequests     FriendshipRequest[] @relation("Receiver")
-  friendshipsInitiated Friendship[]        @relation("Initiator")
-  friendshipsReceived  Friendship[]        @relation("Receiver")
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  id                     Int                  @id @default(autoincrement())
+  email                  String               @unique
+  password               String
+  username               String               @unique @db.VarChar(30)
+  name                   String?
+  surname                String?
+  isConfirmed            Boolean              @default(false)
+  sentRequests           FriendshipRequest[]  @relation("Sender")
+  receivedRequests       FriendshipRequest[]  @relation("Receiver")
+  friendshipsInitiated   Friendship[]         @relation("Initiator")
+  friendshipsReceived    Friendship[]         @relation("Receiver")
+  debtsAsDebtor          Debt[]               @relation("Debtor")
+  debtsAsCreditor        Debt[]               @relation("Creditor")
+  debtRequestsAsDebtor   DebtRequest[]        @relation("Debtor")
+  debtRequestsAsCreditor DebtRequest[]        @relation("Creditor")
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  DebtPaymentRequest     DebtPaymentRequest[] @relation("Debtor")
 }
 
 model Friendship {
@@ -56,4 +61,45 @@ enum RequestStatus {
   PENDING
   ACCEPTED
   REJECTED
+}
+
+model Debt {
+  id                 Int                  @id @default(autoincrement())
+  amount             Float
+  title              String
+  description        String               @db.VarChar(255)
+  debtorId           Int
+  creditorId         Int
+  isPaidInFull       Boolean              @default(false)
+  debtor             User                 @relation("Debtor", fields: [debtorId], references: [id])
+  creditor           User                 @relation("Creditor", fields: [creditorId], references: [id])
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  DebtPaymentRequest DebtPaymentRequest[]
+}
+
+model DebtRequest {
+  id          Int      @id @default(autoincrement())
+  amount      Float
+  title       String
+  description String   @db.VarChar(255)
+  debtorId    Int
+  creditorId  Int
+  isAccepted  Boolean  @default(false)
+  debtor      User     @relation("Debtor", fields: [debtorId], references: [id])
+  creditor    User     @relation("Creditor", fields: [creditorId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DebtPaymentRequest {
+  id         Int      @id @default(autoincrement())
+  amount     Float
+  debtId     Int
+  debtorId   Int
+  isAccepted Boolean  @default(false)
+  debtor     User     @relation("Debtor", fields: [debtorId], references: [id])
+  debt       Debt     @relation(fields: [debtId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

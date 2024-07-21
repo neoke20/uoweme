@@ -1,15 +1,9 @@
 import { FriendsProps } from "~/routes/_app.imowed";
-import { useState } from "react";
-import { Autocomplete, Button, Textarea, TextInput, Text } from "@mantine/core";
-import { Form, useSubmit } from "@remix-run/react";
+import { Autocomplete, Box, Button, Textarea, TextInput } from "@mantine/core";
+import { useFetcher } from "@remix-run/react";
 import { CURRENCIES } from "~/currencies";
 import { z } from "zod";
 import { useForm, zodResolver } from "@mantine/form";
-
-const debtRequestSchema = z.object({
-  amount: z.string().min(1, { message: "Amount must be greater than 0" }),
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-});
 
 export default function DebtRequestCard({
   friends,
@@ -18,106 +12,103 @@ export default function DebtRequestCard({
   friends: FriendsProps[];
   close: () => void;
 }) {
-  const [friendValue, setFriendValue] = useState("");
-  const [currencyValue, setCurrencyValue] = useState("");
-  const [description, setDescription] = useState("");
+  const data = friends.map((friend) => {
+    return friend.receiver.username;
+  });
+
+  const debtRequestSchema = z.object({
+    receiver: z.string().refine((value) => data.includes(value), {
+      message: "Receiver must be a valid friend username",
+    }),
+    amount: z.string().min(1, { message: "Amount must be greater than 0" }),
+    currency: z.string().refine((value) => CURRENCIES.includes(value), {
+      message: "Currency must be a valid currency",
+    }),
+    title: z
+      .string()
+      .min(3, { message: "Title must be at least 3 characters" }),
+    description: z
+      .string()
+      .min(1, { message: "Description must be at least 1 character" }),
+  });
 
   const debtRequestForm = useForm({
     validate: zodResolver(debtRequestSchema),
     initialValues: {
-      receiver: friendValue,
+      receiver: "",
       amount: "",
-      currency: currencyValue,
+      currency: "",
       title: "",
-      formId: "sendDebtRequest",
-      description: description,
+      description: "",
     },
   });
 
-  const submit = useSubmit();
+  const actionFetcher = useFetcher();
 
-  const handlePostDebtRequest = async (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
-    debtRequestForm.onSubmit(
-      (values, _event) => {
-        console.log("!!!!Form values", values);
-        submit({ method: "post" });
-        close();
-      },
-      (validationErrors, _values) => {
-        console.log("Validation errors", validationErrors);
-      }
-    )(event);
-    event.preventDefault();
+  const handlePostDebtRequest = () => {
+    if (debtRequestForm.validate().hasErrors) {
+      debtRequestForm.validate();
+    } else {
+      actionFetcher.submit(
+        {
+          values: debtRequestForm.values,
+        },
+        {
+          method: "post",
+          action: "/action/send-debt-request",
+          encType: "application/json",
+        }
+      );
+      close();
+    }
   };
 
-  const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setDescription(event.target.value);
-  };
-  const data = friends.map((friend) => {
-    return friend.receiver.username;
-  });
-  console.log("FRIENDS DATA", data);
   return (
-    <Form method="post" onSubmit={handlePostDebtRequest}>
-      <input hidden name="formId" defaultValue="sendDebtRequest" />
-      <input hidden name="receiver" defaultValue={friendValue} />
+    <Box>
       <Autocomplete
         label="Find a friend"
         description="Find a friend by username"
         data={data}
-        value={friendValue}
         limit={5}
-        onChange={setFriendValue}
+        {...debtRequestForm.getInputProps("receiver")}
       />
-      {friendValue ? (
-        <>
-          <TextInput
-            label="Amount"
-            name="amount"
-            type="number"
-            {...debtRequestForm.getInputProps("amount")}
-          />
-          <Autocomplete
-            label="Currency"
-            description="Select the currency"
-            data={CURRENCIES}
-            value={currencyValue}
-            limit={5}
-            onChange={setCurrencyValue}
-          />
-          {currencyValue ? (
-            <>
-              <TextInput
-                label="Title"
-                name="title"
-                description="Name the debt"
-                {...debtRequestForm.getInputProps("title")}
-              />
-              <Textarea
-                label="Description"
-                description="Describe what this debt is about (max 250 characters)"
-                name="description"
-                value={description}
-                onChange={handleChange}
-                autosize
-                minRows={2}
-                maxLength={250}
-              />
-              <Text
-                size="sm"
-                c={description.length < 250 ? "dimmed" : "bittersweet.6"}
-              >
-                {description.length}/250 characters
-              </Text>
-              <Button type="submit" color="platinum.4" fullWidth my="md">
-                Send request
-              </Button>
-            </>
-          ) : null}
-        </>
-      ) : null}
-    </Form>
+      <TextInput
+        label="Amount"
+        name="amount"
+        type="number"
+        {...debtRequestForm.getInputProps("amount")}
+      />
+      <Autocomplete
+        label="Currency"
+        description="Select the currency"
+        data={CURRENCIES}
+        limit={5}
+        {...debtRequestForm.getInputProps("currency")}
+      />
+      <TextInput
+        label="Title"
+        name="title"
+        description="Name the debt"
+        {...debtRequestForm.getInputProps("title")}
+      />
+      <Textarea
+        label="Description"
+        description="Describe what this debt is about (max 250 characters)"
+        name="description"
+        {...debtRequestForm.getInputProps("description")}
+        autosize
+        minRows={2}
+        maxLength={250}
+      />
+      <Button
+        type="submit"
+        color="platinum.4"
+        fullWidth
+        my="md"
+        onClick={handlePostDebtRequest}
+      >
+        Send request
+      </Button>
+    </Box>
   );
 }

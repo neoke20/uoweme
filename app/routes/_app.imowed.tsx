@@ -1,5 +1,5 @@
 import { Box, Button, Center, Container, Modal, Title } from "@mantine/core";
-import { Currency, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
 import { requireUser } from "~/auth.server";
 import DebtCard from "~/components/DebtCard";
@@ -83,34 +83,11 @@ export async function action({ request }: { request: Request }) {
       status: 303,
       headers: { Location: "/imowed" },
     });
-  } else if (formId === "sendDebtRequest") {
-    console.log("SEND DEBT REQUEST");
-    const { receiver, amount, currency, title, description } =
-      Object.fromEntries(Array.from(formData.entries()));
-    const sessionUser = await requireUser(request);
-    // await prisma.debtRequest.create({
-    //   data: {
-    //     amount: Number(amount),
-    //     currency: currency as Currency,
-    //     title: title as string,
-    //     description: description as string,
-    //     creditorId: sessionUser.userId,
-    //     debtorId: Number(receiver),
-    //   },
-    // });
-    return new Response(null, {
-      status: 303,
-      headers: { Location: "/imowed" },
-    });
-  } else {
-    console.log("Unknown formId", formId);
-    return null;
   }
 }
 
 export default function Imowed() {
   const { creditList, friends } = useLoaderData<typeof loader>();
-  console.log({ creditList, friends });
 
   const [opened, { open, close }] = useDisclosure(false);
   const [modalContent, setModalContent] = useState<ModalContent>();

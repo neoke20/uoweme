@@ -19,6 +19,7 @@ import {
   MantineColorsTuple,
 } from "@mantine/core";
 import { destroySession, getSession } from "./session.server";
+import { ModalsProvider } from "@mantine/modals";
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -120,9 +121,11 @@ export default function App() {
       </head>
       <body>
         <MantineProvider theme={theme}>
-          <ScrollRestoration />
-          <Scripts />
-          <Outlet />
+          <ModalsProvider>
+            <ScrollRestoration />
+            <Scripts />
+            <Outlet />
+          </ModalsProvider>
         </MantineProvider>
       </body>
     </html>

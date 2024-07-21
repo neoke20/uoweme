@@ -43,6 +43,24 @@ export async function loader({ request }: { request: Request }) {
   return { creditList };
 }
 
+export async function action({ request }: { request: Request }) {
+  const formData = await request.formData();
+  const formId = formData.get("formId");
+
+  if (formId === "cancelDebt") {
+    const debtId = Number(formData.get("debtId"));
+    await prisma.debt.delete({
+      where: {
+        id: debtId,
+      },
+    });
+    return new Response(null, {
+      status: 303,
+      headers: { Location: "/imowed" },
+    });
+  }
+}
+
 export default function Imowed() {
   const { creditList } = useLoaderData<typeof loader>();
   console.log(creditList);

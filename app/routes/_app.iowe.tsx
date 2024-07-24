@@ -1,4 +1,4 @@
-import { Button, Drawer } from "@mantine/core";
+import { Button, Drawer, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
@@ -56,6 +56,22 @@ export async function loader({ request }: { request: Request }) {
   return { pendingDebitList, debitList };
 }
 
+export async function action({ request }: { request: Request }) {
+  const formData = await request.formData();
+  const formId = formData.get("formId");
+
+  if (formId === "paidInFull") {
+    console.log("Paid in full");
+  }
+
+  if (formId === "paidPartially") {
+    const { partialAmount } = Object.fromEntries(formData);
+    console.log("Partial amount in the action", partialAmount);
+    console.log("Paid partially");
+  }
+  return null;
+}
+
 export default function Iowe() {
   const { pendingDebitList, debitList } = useLoaderData<typeof loader>();
   console.log(pendingDebitList, debitList);
@@ -72,7 +88,9 @@ export default function Iowe() {
 
   return (
     <div>
-      <h2>I owe to people</h2>
+      <Title order={2} ta="center" my="md">
+        What I owe
+      </Title>
       {pendingDebitList.length > 0 ? (
         <Button
           fullWidth

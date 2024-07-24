@@ -55,6 +55,9 @@ export type PendingRequestProps = {
   debtor: {
     username: string;
   };
+  creditor: {
+    username: string;
+  };
   createdAt: string;
   updatedAt: string;
 };
@@ -93,6 +96,7 @@ export async function loader({ request }: { request: Request }) {
   const pendingCreditList = await prisma.debtRequest.findMany({
     where: {
       creditorId: sessionUser.userId,
+      isAccepted: false,
     },
     include: {
       debtor: {
@@ -182,6 +186,7 @@ export default function Imowed() {
                     pendingCreditList as unknown as PendingRequestProps[]
                   }
                   close={closeDrawer}
+                  type="credit"
                 />
               )
             }

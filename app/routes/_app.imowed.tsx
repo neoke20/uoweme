@@ -1,8 +1,21 @@
-import { Box, Container, Title } from "@mantine/core";
+import {
+  Box,
+  Button,
+  Container,
+  Drawer,
+  Modal,
+  Stack,
+  Title,
+} from "@mantine/core";
 import { PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
 import { requireUser } from "~/auth.server";
 import DebtCard from "~/components/DebtCard";
+import { FiPlus, FiInfo } from "react-icons/fi";
+import { useDisclosure } from "@mantine/hooks";
+import { useState } from "react";
+import DebtRequestCard from "~/components/DebtRequestCard";
+import PendingRequestDrawer from "~/components/PendingRequestDrawer";
 const prisma = new PrismaClient();
 
 export type CreditProps = {
@@ -17,6 +30,29 @@ export type CreditProps = {
   debtor: {
     name: string;
     surname: string;
+    username: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FriendsProps = {
+  receiver: {
+    id: number;
+    username: string;
+  };
+};
+
+export type PendingRequestProps = {
+  id: number;
+  amount: number;
+  creditorId: number;
+  currency: string;
+  title: string;
+  description: string;
+  isPaidInFull: boolean;
+  debtorId: number;
+  debtor: {
     username: string;
   };
   createdAt: string;
@@ -40,7 +76,34 @@ export async function loader({ request }: { request: Request }) {
     },
   });
 
-  return { creditList };
+  const friends = await prisma.friendship.findMany({
+    where: {
+      userId: sessionUser.userId,
+    },
+    include: {
+      receiver: {
+        select: {
+          id: true,
+          username: true,
+        },
+      },
+    },
+  });
+
+  const pendingCreditList = await prisma.debtRequest.findMany({
+    where: {
+      creditorId: sessionUser.userId,
+    },
+    include: {
+      debtor: {
+        select: {
+          username: true,
+        },
+      },
+    },
+  });
+
+  return { creditList, friends, pendingCreditList };
 }
 
 export async function action({ request }: { request: Request }) {
@@ -62,20 +125,88 @@ export async function action({ request }: { request: Request }) {
 }
 
 export default function Imowed() {
-  const { creditList } = useLoaderData<typeof loader>();
-  console.log(creditList);
+  const { creditList, friends, pendingCreditList } =
+    useLoaderData<typeof loader>();
+
+  console.log(pendingCreditList);
+
+  const [opened, { open, close }] = useDisclosure(false);
+  const [modalContent, setModalContent] = useState<ModalContent>();
+  type ModalContent = React.ReactElement;
+
+  const handleModalOpen = (content: ModalContent) => {
+    setModalContent(content);
+    open();
+  };
+
+  const [openedDrawer, { open: openDrawer, close: closeDrawer }] =
+    useDisclosure(false);
+  const [drawerContent, setDrawerContent] = useState<DrawerContent>();
+  type DrawerContent = React.ReactElement;
+
+  const handleDrawerOpen = (content: DrawerContent) => {
+    setDrawerContent(content);
+    openDrawer();
+  };
+
   return (
     <Box>
+      <Title order={2} ta="center" my="md">
+        What people owe you
+      </Title>
+      <Stack justify="center" gap="md">
+        <Button
+          fullWidth
+          color="platinum.4"
+          leftSection={<FiPlus />}
+          onClick={() =>
+            handleModalOpen(
+              <DebtRequestCard
+                friends={friends as FriendsProps[]}
+                close={close}
+              />
+            )
+          }
+        >
+          Send Request
+        </Button>
+        {pendingCreditList.length > 0 ? (
+          <Button
+            fullWidth
+            color="platinum.4"
+            leftSection={<FiInfo />}
+            onClick={() =>
+              handleDrawerOpen(
+                <PendingRequestDrawer
+                  requests={
+                    pendingCreditList as unknown as PendingRequestProps[]
+                  }
+                  close={closeDrawer}
+                />
+              )
+            }
+          >
+            Pending Requests
+          </Button>
+        ) : null}
+      </Stack>
       {creditList.length > 0 ? (
         <Container>
-          <Title order={2} ta="center" my="md">
-            What people owe you
-          </Title>
           {creditList.map((credit) => (
             <DebtCard key={credit.id} details={credit as CreditProps} />
           ))}
         </Container>
       ) : null}
+      <Modal opened={opened} onClose={close} centered title="Debt Request">
+        {modalContent}
+      </Modal>
+      <Drawer
+        opened={openedDrawer}
+        onClose={closeDrawer}
+        title="Pending Requests"
+      >
+        {drawerContent}
+      </Drawer>
     </Box>
   );
 }

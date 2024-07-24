@@ -10,7 +10,7 @@ import {
 import { PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
 import { requireUser } from "~/auth.server";
-import DebtCard from "~/components/DebtCard";
+import CreditCard from "~/components/CreditCard";
 import { FiPlus, FiInfo } from "react-icons/fi";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
@@ -198,7 +198,7 @@ export default function Imowed() {
       {creditList.length > 0 ? (
         <Container>
           {creditList.map((credit) => (
-            <DebtCard key={credit.id} details={credit as CreditProps} />
+            <CreditCard key={credit.id} details={credit as CreditProps} />
           ))}
         </Container>
       ) : null}

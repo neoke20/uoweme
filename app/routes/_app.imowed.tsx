@@ -10,7 +10,7 @@ import {
 import { PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
 import { requireUser } from "~/auth.server";
-import DebtCard from "~/components/DebtCard";
+import CreditCard from "~/components/CreditCard";
 import { FiPlus, FiInfo } from "react-icons/fi";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
@@ -55,6 +55,9 @@ export type PendingRequestProps = {
   debtor: {
     username: string;
   };
+  creditor: {
+    username: string;
+  };
   createdAt: string;
   updatedAt: string;
 };
@@ -93,6 +96,7 @@ export async function loader({ request }: { request: Request }) {
   const pendingCreditList = await prisma.debtRequest.findMany({
     where: {
       creditorId: sessionUser.userId,
+      isAccepted: false,
     },
     include: {
       debtor: {
@@ -182,6 +186,7 @@ export default function Imowed() {
                     pendingCreditList as unknown as PendingRequestProps[]
                   }
                   close={closeDrawer}
+                  type="credit"
                 />
               )
             }
@@ -193,7 +198,7 @@ export default function Imowed() {
       {creditList.length > 0 ? (
         <Container>
           {creditList.map((credit) => (
-            <DebtCard key={credit.id} details={credit as CreditProps} />
+            <CreditCard key={credit.id} details={credit as CreditProps} />
           ))}
         </Container>
       ) : null}

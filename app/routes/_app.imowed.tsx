@@ -43,6 +43,22 @@ export type FriendsProps = {
   };
 };
 
+export type PendingRequestProps = {
+  id: number;
+  amount: number;
+  creditorId: number;
+  currency: string;
+  title: string;
+  description: string;
+  isPaidInFull: boolean;
+  debtorId: number;
+  debtor: {
+    username: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
 export async function loader({ request }: { request: Request }) {
   const sessionUser = await requireUser(request);
   const creditList = await prisma.debt.findMany({
@@ -135,45 +151,47 @@ export default function Imowed() {
 
   return (
     <Box>
+      <Title order={2} ta="center" my="md">
+        What people owe you
+      </Title>
+      <Stack justify="center" gap="md">
+        <Button
+          fullWidth
+          color="platinum.4"
+          leftSection={<FiPlus />}
+          onClick={() =>
+            handleModalOpen(
+              <DebtRequestCard
+                friends={friends as FriendsProps[]}
+                close={close}
+              />
+            )
+          }
+        >
+          Send Request
+        </Button>
+        {pendingCreditList.length > 0 ? (
+          <Button
+            fullWidth
+            color="platinum.4"
+            leftSection={<FiInfo />}
+            onClick={() =>
+              handleDrawerOpen(
+                <PendingRequestDrawer
+                  requests={
+                    pendingCreditList as unknown as PendingRequestProps[]
+                  }
+                  close={closeDrawer}
+                />
+              )
+            }
+          >
+            Pending Requests
+          </Button>
+        ) : null}
+      </Stack>
       {creditList.length > 0 ? (
         <Container>
-          <Title order={2} ta="center" my="md">
-            What people owe you
-          </Title>
-          <Stack justify="center" gap="md">
-            {pendingCreditList.length > 0 ? (
-              <Button
-                fullWidth
-                color="platinum.4"
-                leftSection={<FiInfo />}
-                onClick={() =>
-                  handleDrawerOpen(
-                    <PendingRequestDrawer
-                      requests={pendingCreditList}
-                      close={closeDrawer}
-                    />
-                  )
-                }
-              >
-                Pending Requests
-              </Button>
-            ) : null}
-            <Button
-              fullWidth
-              color="platinum.4"
-              leftSection={<FiPlus />}
-              onClick={() =>
-                handleModalOpen(
-                  <DebtRequestCard
-                    friends={friends as FriendsProps[]}
-                    close={close}
-                  />
-                )
-              }
-            >
-              Send Request
-            </Button>
-          </Stack>
           {creditList.map((credit) => (
             <DebtCard key={credit.id} details={credit as CreditProps} />
           ))}

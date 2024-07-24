@@ -67,6 +67,8 @@ export default function PendingRequestDrawer({
             </Card.Section>
             <Stack key={request.id} gap="sm" p="md">
               <Text>{request.title}</Text>
+
+              {type === "debt" ? <Text>{request.description}</Text> : null}
               <NumberFormatter
                 prefix={`${request.currency} `}
                 value={request.amount}

@@ -1,6 +1,7 @@
 import {
   Alert,
   Badge,
+  Box,
   Button,
   Card,
   Flex,
@@ -10,7 +11,7 @@ import {
   Text,
 } from "@mantine/core";
 import { CreditProps } from "~/routes/_app.imowed";
-import { FiAlertCircle, FiTrash2 } from "react-icons/fi";
+import { FiAlertCircle, FiCheck, FiTrash2 } from "react-icons/fi";
 import { modals } from "@mantine/modals";
 import { useFetcher } from "@remix-run/react";
 import { useRef } from "react";
@@ -18,6 +19,7 @@ import { useRef } from "react";
 export default function CreditCard({ details }: { details: CreditProps }) {
   const fetcher = useFetcher();
   const formRef = useRef<HTMLFormElement>(null);
+  const ConfirmPaymentRef = useRef<HTMLFormElement>(null);
   const alertIcon = <FiAlertCircle />;
 
   const openModal = () =>
@@ -34,6 +36,24 @@ export default function CreditCard({ details }: { details: CreditProps }) {
       confirmProps: { type: "submit", color: "platinum.4" },
       onConfirm: () => {
         formRef.current!.submit();
+      },
+      closeOnConfirm: true,
+      closeOnCancel: true,
+    });
+
+  const openPaymentConfirmationModal = () =>
+    modals.openConfirmModal({
+      title: "Accept this payment?",
+      children: (
+        <Alert my="md" color="vermilion.6" icon={<FiCheck />}>
+          Are you sure you want to accept? This action cannot be undone.
+        </Alert>
+      ),
+      centered: true,
+      labels: { confirm: "Yes, accept the payment", cancel: "No, not yet" },
+      confirmProps: { type: "submit", color: "platinum.4" },
+      onConfirm: () => {
+        ConfirmPaymentRef.current!.submit();
       },
       closeOnConfirm: true,
       closeOnCancel: true,
@@ -65,6 +85,93 @@ export default function CreditCard({ details }: { details: CreditProps }) {
           )}
         </Flex>
       </Card.Section>
+      {details.DebtPaymentRequest.length > 0 ? (
+        <>
+          {details.DebtPaymentRequest.map((paymentRequest) => (
+            <Box key={paymentRequest.id}>
+              {!paymentRequest.isAccepted ? (
+                <Card.Section p="md" withBorder>
+                  <Text ta="center" my="sm">
+                    <span style={{ fontWeight: "bold" }}>
+                      {details.debtor.username}
+                    </span>{" "}
+                    say they have sent you the following payment:
+                  </Text>
+                  <Table withTableBorder withColumnBorders>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Amount:</Table.Th>
+                        <Table.Th>Requested On</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      <Table.Tr>
+                        <Table.Td>
+                          <NumberFormatter
+                            value={paymentRequest.amount}
+                            thousandSeparator
+                            prefix={`${details.currency} `}
+                          />
+                        </Table.Td>
+                        <Table.Td>
+                          {Intl.DateTimeFormat("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "numeric",
+                          }).format(new Date(paymentRequest.createdAt))}
+                        </Table.Td>
+                      </Table.Tr>
+                    </Table.Tbody>
+                  </Table>
+                  <fetcher.Form method="post" ref={ConfirmPaymentRef}>
+                    <input hidden name="formId" defaultValue="acceptPayment" />
+                    <input
+                      hidden
+                      name="paymentRequestId"
+                      defaultValue={paymentRequest.id}
+                    />
+                    <input hidden name="debtId" defaultValue={details.id} />
+                    <input
+                      hidden
+                      name="amount"
+                      defaultValue={paymentRequest.amount}
+                    />
+                    <Button
+                      fullWidth
+                      my="sm"
+                      leftSection={<FiCheck />}
+                      color="charcoal.6"
+                      onClick={openPaymentConfirmationModal}
+                    >
+                      Confirm this payment
+                    </Button>
+                  </fetcher.Form>
+                </Card.Section>
+              ) : (
+                <Card.Section withBorder m="md">
+                  <Flex gap="md" align="center">
+                    <FiCheck color="green" />
+                    <Text>
+                      Paid:{" "}
+                      <NumberFormatter
+                        prefix={`${details.currency} `}
+                        value={paymentRequest.amount}
+                        thousandSeparator
+                      />{" "}
+                      on{" "}
+                      {Intl.DateTimeFormat().format(
+                        new Date(paymentRequest.createdAt)
+                      )}
+                    </Text>
+                  </Flex>
+                </Card.Section>
+              )}
+            </Box>
+          ))}
+        </>
+      ) : null}
 
       <Card.Section p="md" withBorder>
         <Table withRowBorders={false}>

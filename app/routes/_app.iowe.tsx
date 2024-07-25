@@ -1,4 +1,4 @@
-import { Button, Drawer } from "@mantine/core";
+import { Button, Drawer, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
@@ -21,6 +21,12 @@ export type DebtProps = {
   creditor: {
     username: string;
   };
+  DebtPaymentRequest: {
+    id: number;
+    amount: number;
+    createdAt: Date;
+    isAccepted: boolean;
+  }[];
 };
 
 export async function loader({ request }: { request: Request }) {
@@ -36,6 +42,7 @@ export async function loader({ request }: { request: Request }) {
           username: true,
         },
       },
+      DebtPaymentRequest: true,
     },
   });
 
@@ -56,9 +63,55 @@ export async function loader({ request }: { request: Request }) {
   return { pendingDebitList, debitList };
 }
 
+export async function action({ request }: { request: Request }) {
+  const formData = await request.formData();
+  const formId = formData.get("formId");
+
+  if (formId === "paidInFull") {
+    const { debtId } = Object.fromEntries(formData);
+    const currentDebt = await prisma.debt.findUnique({
+      where: {
+        id: parseInt(debtId as string),
+      },
+    });
+    if (!currentDebt) {
+      return new Response("Debt not found", { status: 404 });
+    } else {
+      await prisma.debtPaymentRequest.create({
+        data: {
+          debtId: parseInt(debtId as string),
+          debtorId: currentDebt.debtorId,
+          amount: currentDebt.amount,
+        },
+      });
+    }
+  }
+
+  if (formId === "paidPartially") {
+    const { partialAmount, debtId } = Object.fromEntries(formData);
+    const currentDebt = await prisma.debt.findUnique({
+      where: {
+        id: parseInt(debtId as string),
+      },
+    });
+    if (!currentDebt) {
+      return new Response("Debt not found", { status: 404 });
+    } else {
+      await prisma.debtPaymentRequest.create({
+        data: {
+          debtId: parseInt(debtId as string),
+          debtorId: currentDebt?.debtorId,
+          amount: parseInt(partialAmount as string),
+        },
+      });
+    }
+  }
+  return null;
+}
+
 export default function Iowe() {
   const { pendingDebitList, debitList } = useLoaderData<typeof loader>();
-  console.log(pendingDebitList, debitList);
+  console.log(debitList);
 
   const [openedDrawer, { open: openDrawer, close: closeDrawer }] =
     useDisclosure(false);
@@ -72,7 +125,9 @@ export default function Iowe() {
 
   return (
     <div>
-      <h2>I owe to people</h2>
+      <Title order={2} ta="center" my="md">
+        What I owe
+      </Title>
       {pendingDebitList.length > 0 ? (
         <Button
           fullWidth

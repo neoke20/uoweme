@@ -12,16 +12,16 @@ import {
 import { modals } from "@mantine/modals";
 import { useFetcher } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { FiAlertCircle } from "react-icons/fi";
+import { FiAlertCircle, FiCheck, FiX } from "react-icons/fi";
 import { DebtProps } from "~/routes/_app.iowe";
 
 export default function DebtCard({ debt }: { debt: DebtProps }) {
   const fetcher = useFetcher();
-  const formRef = useRef<HTMLFormElement>(null);
+  const formRefFull = useRef<HTMLFormElement>(null);
+  const formRefPartial = useRef<HTMLFormElement>(null);
   const alertIcon = <FiAlertCircle />;
 
   const [partialAmount, setPartialAmount] = useState<number>(0);
-  console.log("Partial payment", partialAmount);
 
   const openPaidInFullModal = () =>
     modals.openConfirmModal({
@@ -36,11 +36,12 @@ export default function DebtCard({ debt }: { debt: DebtProps }) {
       labels: { confirm: "Yes!", cancel: "Wait, I have not paid yet!" },
       confirmProps: { type: "submit", color: "charcoal.8" },
       onConfirm: () => {
-        formRef.current!.submit();
+        formRefFull.current!.submit();
       },
       closeOnConfirm: true,
       closeOnCancel: true,
     });
+
   const openPaidPartiallyModal = () =>
     modals.openConfirmModal({
       title: "Paid partially?",
@@ -72,7 +73,7 @@ export default function DebtCard({ debt }: { debt: DebtProps }) {
         disabled: partialAmount === 0 ? true : false,
       },
       onConfirm: () => {
-        formRef.current!.submit();
+        formRefPartial.current!.submit();
       },
       closeOnConfirm: true,
       closeOnCancel: true,
@@ -126,16 +127,63 @@ export default function DebtCard({ debt }: { debt: DebtProps }) {
           </Table.Tbody>
         </Table>
       </Card.Section>
+      {debt.DebtPaymentRequest.length > 0 ? (
+        <>
+          {debt.DebtPaymentRequest.map((paymentRequest) => (
+            <Card.Section p="md" withBorder key={paymentRequest.id}>
+              <Text ta="center" my="sm" fw="bold">
+                Payment request
+              </Text>
+              <Table withRowBorders={false}>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Amount:</Table.Th>
+                    <Table.Th>Requested On</Table.Th>
+                    <Table.Th>Accepted</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  <Table.Tr>
+                    <Table.Td>
+                      <NumberFormatter
+                        value={paymentRequest.amount}
+                        thousandSeparator
+                        prefix={`${debt.currency} `}
+                      />
+                    </Table.Td>
+                    <Table.Td>
+                      {Intl.DateTimeFormat("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "numeric",
+                      }).format(new Date(paymentRequest.createdAt))}
+                    </Table.Td>
+                    <Table.Td>
+                      {paymentRequest.isAccepted ? (
+                        <FiCheck color="green" />
+                      ) : (
+                        <FiX color="red" />
+                      )}
+                    </Table.Td>
+                  </Table.Tr>
+                </Table.Tbody>
+              </Table>
+            </Card.Section>
+          ))}
+        </>
+      ) : null}
       <Card.Section p="md">
         <Stack justify="space-between">
-          <fetcher.Form method="post" ref={formRef}>
+          <fetcher.Form method="post" ref={formRefFull}>
             <input hidden name="formId" defaultValue="paidInFull" />
             <input hidden name="debtId" defaultValue={debt.id} />
             <Button color="charcoal.8" onClick={openPaidInFullModal}>
               Paid in full
             </Button>
           </fetcher.Form>
-          <fetcher.Form method="post" ref={formRef}>
+          <fetcher.Form method="post" ref={formRefPartial}>
             <input hidden name="formId" defaultValue="paidPartially" />
             <input hidden name="debtId" defaultValue={debt.id} />
             <input hidden name="partialAmount" defaultValue={partialAmount} />

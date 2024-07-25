@@ -21,6 +21,12 @@ export type DebtProps = {
   creditor: {
     username: string;
   };
+  DebtPaymentRequest: {
+    id: number;
+    amount: number;
+    createdAt: Date;
+    isAccepted: boolean;
+  }[];
 };
 
 export async function loader({ request }: { request: Request }) {
@@ -36,6 +42,7 @@ export async function loader({ request }: { request: Request }) {
           username: true,
         },
       },
+      DebtPaymentRequest: true,
     },
   });
 
@@ -61,20 +68,50 @@ export async function action({ request }: { request: Request }) {
   const formId = formData.get("formId");
 
   if (formId === "paidInFull") {
-    console.log("Paid in full");
+    const { debtId } = Object.fromEntries(formData);
+    const currentDebt = await prisma.debt.findUnique({
+      where: {
+        id: parseInt(debtId as string),
+      },
+    });
+    if (!currentDebt) {
+      return new Response("Debt not found", { status: 404 });
+    } else {
+      await prisma.debtPaymentRequest.create({
+        data: {
+          debtId: parseInt(debtId as string),
+          debtorId: currentDebt.debtorId,
+          amount: currentDebt.amount,
+        },
+      });
+    }
   }
 
   if (formId === "paidPartially") {
-    const { partialAmount } = Object.fromEntries(formData);
-    console.log("Partial amount in the action", partialAmount);
-    console.log("Paid partially");
+    const { partialAmount, debtId } = Object.fromEntries(formData);
+    const currentDebt = await prisma.debt.findUnique({
+      where: {
+        id: parseInt(debtId as string),
+      },
+    });
+    if (!currentDebt) {
+      return new Response("Debt not found", { status: 404 });
+    } else {
+      await prisma.debtPaymentRequest.create({
+        data: {
+          debtId: parseInt(debtId as string),
+          debtorId: currentDebt?.debtorId,
+          amount: parseInt(partialAmount as string),
+        },
+      });
+    }
   }
   return null;
 }
 
 export default function Iowe() {
   const { pendingDebitList, debitList } = useLoaderData<typeof loader>();
-  console.log(pendingDebitList, debitList);
+  console.log(debitList);
 
   const [openedDrawer, { open: openDrawer, close: closeDrawer }] =
     useDisclosure(false);

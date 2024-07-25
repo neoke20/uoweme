@@ -1,4 +1,4 @@
-import { Button, Drawer, Title } from "@mantine/core";
+import { Box, Button, Drawer, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
@@ -35,6 +35,7 @@ export async function loader({ request }: { request: Request }) {
   const debitList = await prisma.debt.findMany({
     where: {
       debtorId: sessionUser.userId,
+      isPaidInFull: false,
     },
     include: {
       creditor: {
@@ -111,7 +112,6 @@ export async function action({ request }: { request: Request }) {
 
 export default function Iowe() {
   const { pendingDebitList, debitList } = useLoaderData<typeof loader>();
-  console.log(debitList);
 
   const [openedDrawer, { open: openDrawer, close: closeDrawer }] =
     useDisclosure(false);
@@ -148,7 +148,9 @@ export default function Iowe() {
       ) : null}
       {debitList.length > 0 &&
         debitList.map((debt) => (
-          <DebtCard key={debt.id} debt={debt as unknown as DebtProps} />
+          <Box key={debt.id} my="md">
+            <DebtCard debt={debt as unknown as DebtProps} />
+          </Box>
         ))}
       <Drawer
         opened={openedDrawer}

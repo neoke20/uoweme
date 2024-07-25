@@ -28,7 +28,10 @@ const registrationFormValidation = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   username: z
     .string()
-    .min(3, { message: "Username must be at least 3 characters long" }),
+    .min(3, { message: "Username must be at least 3 characters long" })
+    .refine((value) => value === value.toLowerCase(), {
+      message: "Username must be in lowercase",
+    }),
   password: z
     .string()
     .min(8, { message: "password must be at least 8 characters long" }),
@@ -160,46 +163,49 @@ export default function Registration() {
 
         <Paper withBorder shadow="md" p={30} mt={30} radius="md">
           <Form method="post" onSubmit={handleRegistrationFormSubmit}>
-            <TextInput
-              label="Email"
-              placeholder="uowe@me.com"
-              name="email"
-              {...form.getInputProps("email")}
-              required
-            />
-            {action && action.type === "userEmailExists" ? (
-              <Text my={"xs"} c="vermilion.7" size="sm">
-                {action.message}
-              </Text>
-            ) : null}
-            <TextInput
-              label="Username"
-              placeholder="uoweme"
-              name="username"
-              {...form.getInputProps("username")}
-              required
-            />
-            {action && action.type === "usernameExists" ? (
-              <Text my={"xs"} c="vermilion.7" size="sm">
-                {action.message}
-              </Text>
-            ) : null}
-            <PasswordInput
-              label="Password"
-              placeholder="Your password"
-              name="password"
-              {...form.getInputProps("password")}
-              required
-              mt="md"
-            />
-            <PasswordInput
-              label="Password confirmation"
-              placeholder="Your password"
-              name="passwordConfirmation"
-              {...form.getInputProps("passwordConfirmation")}
-              required
-              mt="md"
-            />
+            <Stack>
+              <TextInput
+                label="Email"
+                placeholder="uowe@me.com"
+                name="email"
+                {...form.getInputProps("email")}
+                required
+              />
+              {action && action.type === "userEmailExists" ? (
+                <Text my={"xs"} c="vermilion.7" size="sm">
+                  {action.message}
+                </Text>
+              ) : null}
+              <TextInput
+                label="Username"
+                description="Username must be in lowercase"
+                placeholder="uoweme"
+                name="username"
+                {...form.getInputProps("username")}
+                required
+              />
+              {action && action.type === "usernameExists" ? (
+                <Text my={"xs"} c="vermilion.7" size="sm">
+                  {action.message}
+                </Text>
+              ) : null}
+              <PasswordInput
+                label="Password"
+                placeholder="Your password"
+                name="password"
+                {...form.getInputProps("password")}
+                required
+                mt="md"
+              />
+              <PasswordInput
+                label="Password confirmation"
+                placeholder="Your password"
+                name="passwordConfirmation"
+                {...form.getInputProps("passwordConfirmation")}
+                required
+                mt="md"
+              />
+            </Stack>
             {action && action.type === "passwordMismatch" ? (
               <Text my={"xs"} c="vermilion.7" size="sm">
                 {action.message}

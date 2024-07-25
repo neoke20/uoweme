@@ -34,6 +34,12 @@ export type CreditProps = {
   };
   createdAt: string;
   updatedAt: string;
+  DebtPaymentRequest: {
+    id: number;
+    amount: number;
+    createdAt: string;
+    isAccepted: boolean;
+  }[];
 };
 
 export type FriendsProps = {
@@ -76,6 +82,7 @@ export async function loader({ request }: { request: Request }) {
           username: true,
         },
       },
+      DebtPaymentRequest: true,
     },
   });
 
@@ -116,6 +123,11 @@ export async function action({ request }: { request: Request }) {
 
   if (formId === "cancelDebt") {
     const debtId = Number(formData.get("debtId"));
+    await prisma.debtPaymentRequest.deleteMany({
+      where: {
+        debtId: debtId,
+      },
+    });
     await prisma.debt.delete({
       where: {
         id: debtId,
@@ -126,13 +138,54 @@ export async function action({ request }: { request: Request }) {
       headers: { Location: "/imowed" },
     });
   }
+
+  if (formId === "acceptPayment") {
+    const { paymentRequestId, debtId, amount } = Object.fromEntries(formData);
+    console.log(paymentRequestId, debtId, amount);
+    await prisma.debtPaymentRequest.update({
+      where: {
+        id: parseInt(paymentRequestId as string),
+      },
+      data: {
+        isAccepted: true,
+      },
+    });
+    const currentDebt = await prisma.debt.findUnique({
+      where: {
+        id: parseInt(debtId as string),
+      },
+    });
+    if (currentDebt) {
+      const amountLeft = currentDebt.amount - parseInt(amount as string);
+      await prisma.debt.update({
+        where: {
+          id: parseInt(debtId as string),
+        },
+        data: {
+          amount: amountLeft,
+        },
+      });
+      if (amountLeft === 0) {
+        await prisma.debt.update({
+          where: {
+            id: parseInt(debtId as string),
+          },
+          data: {
+            isPaidInFull: true,
+          },
+        });
+      }
+    }
+    return new Response(null, {
+      status: 303,
+      headers: { Location: "/imowed" },
+    });
+  }
 }
 
 export default function Imowed() {
   const { creditList, friends, pendingCreditList } =
     useLoaderData<typeof loader>();
-
-  console.log(pendingCreditList);
 
   const [opened, { open, close }] = useDisclosure(false);
   const [modalContent, setModalContent] = useState<ModalContent>();

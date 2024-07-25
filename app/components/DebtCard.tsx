@@ -132,7 +132,7 @@ export default function DebtCard({ debt }: { debt: DebtProps }) {
           {debt.DebtPaymentRequest.map((paymentRequest) => (
             <Card.Section p="md" withBorder key={paymentRequest.id}>
               <Text ta="center" my="sm" fw="bold">
-                Payment request
+                Debt payment request
               </Text>
               <Table withRowBorders={false}>
                 <Table.Thead>

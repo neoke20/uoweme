@@ -268,7 +268,7 @@ export default function Imowed() {
           ))}
         </Container>
       ) : (
-        <Alert>Nobody owes you money</Alert>
+        <Alert my="md">Nobody owes you money</Alert>
       )}
       <Modal opened={opened} onClose={close} centered title="Debt Request">
         {modalContent}

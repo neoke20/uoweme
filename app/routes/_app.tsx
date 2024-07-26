@@ -6,19 +6,54 @@ import {
   Flex,
   Group,
   Stack,
+  Indicator,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
 import { Form, json, Outlet, useLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
 import { TbLogout2, TbSettings } from "react-icons/tb";
+import { requireUser } from "~/auth.server";
 import { commitSession, getSession } from "~/session.server";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
 export async function loader({ request }: { request: Request }) {
   const session = await getSession(request.headers.get("Cookie"));
+  const currentUser = await requireUser(request);
   const message = session.get("flashMessage") || null;
+  const debtRequestsCount = await prisma.debtRequest.count({
+    where: {
+      debtorId: currentUser.userId,
+      isAccepted: false,
+    },
+  });
+  // const paymentRequestCount = await prisma.debt.findMany({
+  //   where: {
+  //     creditorId: currentUser.userId,
+  //   },
+  //   include: {
+  //     DebtPaymentRequest: {
+  //       where: {
+  //         isAccepted: false,
+  //       },
+  //     },
+  //   },
+  // });
+  const paymentRequestCount = await prisma.debtPaymentRequest.findMany({
+    where: {
+      isAccepted: false,
+      debt: {
+        creditorId: currentUser.userId,
+      },
+    },
+  });
   return json(
-    { message },
+    {
+      message,
+      debtRequestsCount,
+      paymentRequestCount: paymentRequestCount.length,
+    },
     {
       headers: {
         // only necessary with cookieSessionStorage
@@ -29,14 +64,15 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export default function AppLayout() {
-  const { message } = useLoaderData<typeof loader>();
+  const { message, debtRequestsCount, paymentRequestCount } =
+    useLoaderData<typeof loader>();
   const [opened, { toggle }] = useDisclosure();
 
   useEffect(() => {
     if (message) {
       showNotification({
         autoClose: 5000,
-        color: message.type === "success" ? "charcoal.6" : "bitterSweet.6",
+        color: message.type === "success" ? "charcoal.6" : "bittersweet.6",
         message: message.message,
       });
     }
@@ -54,7 +90,23 @@ export default function AppLayout() {
     >
       <AppShell.Header>
         <Group h="100%" px="md">
-          <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+          {debtRequestsCount > 0 || paymentRequestCount > 0 ? (
+            <Indicator color="bittersweet.6" processing>
+              <Burger
+                opened={opened}
+                onClick={toggle}
+                hiddenFrom="sm"
+                size="sm"
+              />
+            </Indicator>
+          ) : (
+            <Burger
+              opened={opened}
+              onClick={toggle}
+              hiddenFrom="sm"
+              size="sm"
+            />
+          )}
           <Text component="a" href="/" fz="lg">
             U owe me
           </Text>
@@ -74,22 +126,50 @@ export default function AppLayout() {
             >
               Friends List
             </Button>
-            <Button
-              onClick={toggle}
-              component="a"
-              color="charcoal.9"
-              href="/imowed"
-            >
-              What people owe me
-            </Button>
-            <Button
-              onClick={toggle}
-              component="a"
-              color="charcoal.9"
-              href="/iowe"
-            >
-              What I owe people
-            </Button>
+            {paymentRequestCount > 0 ? (
+              <Indicator color="bittersweet.6" processing>
+                <Button
+                  fullWidth
+                  onClick={toggle}
+                  component="a"
+                  color="charcoal.9"
+                  href="/imowed"
+                >
+                  What people owe me
+                </Button>
+              </Indicator>
+            ) : (
+              <Button
+                onClick={toggle}
+                component="a"
+                color="charcoal.9"
+                href="/imowed"
+              >
+                What people owe me
+              </Button>
+            )}
+            {debtRequestsCount > 0 ? (
+              <Indicator color="bittersweet.6" processing>
+                <Button
+                  fullWidth
+                  onClick={toggle}
+                  component="a"
+                  color="charcoal.9"
+                  href="/iowe"
+                >
+                  What I owe people
+                </Button>
+              </Indicator>
+            ) : (
+              <Button
+                onClick={toggle}
+                component="a"
+                color="charcoal.9"
+                href="/iowe"
+              >
+                What I owe people
+              </Button>
+            )}
           </Stack>
           <Stack gap="md">
             <Button
@@ -114,7 +194,11 @@ export default function AppLayout() {
         </Flex>
       </AppShell.Navbar>
       <AppShell.Main>
-        <Outlet />
+        <Outlet
+          context={{
+            setNotificationsValues: { debtRequestsCount, paymentRequestCount },
+          }}
+        />
       </AppShell.Main>
     </AppShell>
   );

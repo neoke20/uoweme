@@ -10,7 +10,13 @@ import {
   TextInput,
 } from "@mantine/core";
 import { PrismaClient } from "@prisma/client";
-import { Form, json, useActionData, useLoaderData } from "@remix-run/react";
+import {
+  Form,
+  json,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "@remix-run/react";
 import { requireUser } from "~/auth.server";
 import { FiAlertCircle, FiAtSign } from "react-icons/fi";
 import UserCard, { UserProps } from "~/components/UserCard";
@@ -260,6 +266,8 @@ export default function Friends() {
   console.log({ friendshipRequestsSent, friendshipRequestsReceived });
   const alertIcon = <FiAlertCircle />;
   const atSignIcon = <FiAtSign />;
+  const navigation = useNavigation();
+  const submitting = navigation.state === "submitting";
 
   const [opened, { open, close }] = useDisclosure(false);
   const [drawerContent, setDrawerContent] = useState<DrawerContent>();
@@ -320,7 +328,13 @@ export default function Friends() {
             leftSectionPointerEvents="none"
             leftSection={atSignIcon}
           />
-          <Button my="sm" type="submit" color="platinum.4" fullWidth>
+          <Button
+            my="sm"
+            type="submit"
+            color="platinum.4"
+            fullWidth
+            loading={submitting}
+          >
             Search for a friend
           </Button>
         </Form>

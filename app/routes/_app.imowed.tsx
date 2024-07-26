@@ -70,22 +70,6 @@ export type PendingRequestProps = {
   updatedAt: string;
 };
 
-export type HistoryProps = {
-  id: number;
-  amount: number;
-  creditorId: number;
-  currency: string;
-  title: string;
-  description: string;
-  isPaidInFull: boolean;
-  debtorId: number;
-  debtor: {
-    username: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-};
-
 export async function loader({ request }: { request: Request }) {
   const sessionUser = await requireUser(request);
   const creditList = await prisma.debt.findMany({

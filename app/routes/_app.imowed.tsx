@@ -4,6 +4,7 @@ import {
   Button,
   Container,
   Drawer,
+  Flex,
   Modal,
   Stack,
   Title,
@@ -12,7 +13,7 @@ import { PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
 import { requireUser } from "~/auth.server";
 import CreditCard from "~/components/CreditCard";
-import { FiPlus, FiInfo } from "react-icons/fi";
+import { FiPlus, FiInfo, FiHardDrive } from "react-icons/fi";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
 import DebtRequestCard from "~/components/DebtRequestCard";
@@ -69,11 +70,28 @@ export type PendingRequestProps = {
   updatedAt: string;
 };
 
+export type HistoryProps = {
+  id: number;
+  amount: number;
+  creditorId: number;
+  currency: string;
+  title: string;
+  description: string;
+  isPaidInFull: boolean;
+  debtorId: number;
+  debtor: {
+    username: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
 export async function loader({ request }: { request: Request }) {
   const sessionUser = await requireUser(request);
   const creditList = await prisma.debt.findMany({
     where: {
       creditorId: sessionUser.userId,
+      isPaidInFull: false,
     },
     include: {
       debtor: {
@@ -187,7 +205,6 @@ export async function action({ request }: { request: Request }) {
 export default function Imowed() {
   const { creditList, friends, pendingCreditList } =
     useLoaderData<typeof loader>();
-
   const [opened, { open, close }] = useDisclosure(false);
   const [modalContent, setModalContent] = useState<ModalContent>();
   type ModalContent = React.ReactElement;
@@ -213,21 +230,32 @@ export default function Imowed() {
         What people owe you
       </Title>
       <Stack justify="center" gap="md">
-        <Button
-          fullWidth
-          color="platinum.4"
-          leftSection={<FiPlus />}
-          onClick={() =>
-            handleModalOpen(
-              <DebtRequestCard
-                friends={friends as FriendsProps[]}
-                close={close}
-              />
-            )
-          }
-        >
-          Send Request
-        </Button>
+        <Flex gap="md">
+          <Button
+            fullWidth
+            color="platinum.4"
+            leftSection={<FiPlus />}
+            onClick={() =>
+              handleModalOpen(
+                <DebtRequestCard
+                  friends={friends as FriendsProps[]}
+                  close={close}
+                />
+              )
+            }
+          >
+            Send Request
+          </Button>
+          <Button
+            w="40%"
+            color="platinum.9"
+            leftSection={<FiHardDrive />}
+            component="a"
+            href="imowed/history"
+          >
+            History
+          </Button>
+        </Flex>
         {pendingCreditList.length > 0 ? (
           <Button
             fullWidth
@@ -261,11 +289,7 @@ export default function Imowed() {
       <Modal opened={opened} onClose={close} centered title="Debt Request">
         {modalContent}
       </Modal>
-      <Drawer
-        opened={openedDrawer}
-        onClose={closeDrawer}
-        title="Pending Requests"
-      >
+      <Drawer opened={openedDrawer} onClose={closeDrawer}>
         {drawerContent}
       </Drawer>
     </Box>

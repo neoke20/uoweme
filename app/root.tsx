@@ -99,6 +99,19 @@ const vermilion: MantineColorsTuple = [
   "#a80302",
 ];
 
+const green: MantineColorsTuple = [
+  "#ecfef5",
+  "#d8fbea",
+  "#abf7d2",
+  "#7cf3b9",
+  "#59f0a3",
+  "#46ee95",
+  "#3bed8e",
+  "#2fd47a",
+  "#24bc6c",
+  "#0ba25a",
+];
+
 const theme = createTheme({
   colors: {
     bittersweet,
@@ -106,6 +119,7 @@ const theme = createTheme({
     charcoal,
     payneGray,
     vermilion,
+    green,
   },
 });
 

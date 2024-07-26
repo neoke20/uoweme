@@ -28,18 +28,6 @@ export async function loader({ request }: { request: Request }) {
       isAccepted: false,
     },
   });
-  // const paymentRequestCount = await prisma.debt.findMany({
-  //   where: {
-  //     creditorId: currentUser.userId,
-  //   },
-  //   include: {
-  //     DebtPaymentRequest: {
-  //       where: {
-  //         isAccepted: false,
-  //       },
-  //     },
-  //   },
-  // });
   const paymentRequestCount = await prisma.debtPaymentRequest.findMany({
     where: {
       isAccepted: false,
@@ -48,10 +36,17 @@ export async function loader({ request }: { request: Request }) {
       },
     },
   });
+  const friendshipRequestsCount = await prisma.friendshipRequest.count({
+    where: {
+      receiverId: currentUser.userId,
+      status: "PENDING",
+    },
+  });
   return json(
     {
       message,
       debtRequestsCount,
+      friendshipRequestsCount,
       paymentRequestCount: paymentRequestCount.length,
     },
     {
@@ -64,8 +59,12 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export default function AppLayout() {
-  const { message, debtRequestsCount, paymentRequestCount } =
-    useLoaderData<typeof loader>();
+  const {
+    message,
+    debtRequestsCount,
+    paymentRequestCount,
+    friendshipRequestsCount,
+  } = useLoaderData<typeof loader>();
   const [opened, { toggle }] = useDisclosure();
 
   useEffect(() => {
@@ -90,7 +89,9 @@ export default function AppLayout() {
     >
       <AppShell.Header>
         <Group h="100%" px="md">
-          {debtRequestsCount > 0 || paymentRequestCount > 0 ? (
+          {debtRequestsCount > 0 ||
+          paymentRequestCount > 0 ||
+          friendshipRequestsCount > 0 ? (
             <Indicator color="bittersweet.6" processing>
               <Burger
                 opened={opened}
@@ -118,14 +119,28 @@ export default function AppLayout() {
             <Button onClick={toggle} component="a" color="charcoal.9" href="/">
               Home
             </Button>
-            <Button
-              onClick={toggle}
-              component="a"
-              color="charcoal.9"
-              href="/friends"
-            >
-              Friends List
-            </Button>
+            {friendshipRequestsCount > 0 ? (
+              <Indicator color="bittersweet.6" processing>
+                <Button
+                  fullWidth
+                  onClick={toggle}
+                  component="a"
+                  color="charcoal.9"
+                  href="/friends"
+                >
+                  Friends List
+                </Button>
+              </Indicator>
+            ) : (
+              <Button
+                onClick={toggle}
+                component="a"
+                color="charcoal.9"
+                href="/friends"
+              >
+                Friends List
+              </Button>
+            )}
             {paymentRequestCount > 0 ? (
               <Indicator color="bittersweet.6" processing>
                 <Button
@@ -196,7 +211,11 @@ export default function AppLayout() {
       <AppShell.Main>
         <Outlet
           context={{
-            setNotificationsValues: { debtRequestsCount, paymentRequestCount },
+            setNotificationsValues: {
+              debtRequestsCount,
+              paymentRequestCount,
+              friendshipRequestsCount,
+            },
           }}
         />
       </AppShell.Main>

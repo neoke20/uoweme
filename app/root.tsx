@@ -2,6 +2,7 @@
 // All packages except `@mantine/hooks` require styles imports
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
+import "@mantine/notifications/styles.css";
 import { cssBundleHref } from "@remix-run/css-bundle";
 import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import {
@@ -20,6 +21,7 @@ import {
 } from "@mantine/core";
 import { destroySession, getSession } from "./session.server";
 import { ModalsProvider } from "@mantine/modals";
+import { Notifications } from "@mantine/notifications";
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -135,6 +137,7 @@ export default function App() {
       </head>
       <body>
         <MantineProvider theme={theme}>
+          <Notifications position="top-center" />
           <ModalsProvider>
             <ScrollRestoration />
             <Scripts />

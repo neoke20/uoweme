@@ -1,6 +1,6 @@
 import type { MetaFunction } from "@remix-run/node";
 import { Box } from "@mantine/core";
-import { redirect, useLoaderData } from "@remix-run/react";
+import { redirect, useLoaderData, useOutletContext } from "@remix-run/react";
 import { PrismaClient } from "@prisma/client";
 import { getSession } from "~/session.server";
 
@@ -30,6 +30,8 @@ export async function loader({ request }: { request: Request }) {
 
 export default function Index() {
   const { user } = useLoaderData<typeof loader>();
+  const { setNotificationsValues } = useOutletContext();
+  console.log("Test value", setNotificationsValues);
   return (
     <Box>
       <p>Hi, {user?.username}</p>

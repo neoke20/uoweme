@@ -55,6 +55,7 @@ export default function PendingRequestDrawer({
             shadow="md"
             padding="md"
             bg="platinum.4"
+            my="md"
           >
             <Card.Section p="md" withBorder>
               <Center>

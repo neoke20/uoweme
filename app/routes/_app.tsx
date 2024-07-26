@@ -8,11 +8,40 @@ import {
   Stack,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { Form, Outlet } from "@remix-run/react";
+import { showNotification } from "@mantine/notifications";
+import { Form, json, Outlet, useLoaderData } from "@remix-run/react";
+import { useEffect } from "react";
 import { TbLogout2, TbSettings } from "react-icons/tb";
+import { commitSession, getSession } from "~/session.server";
+
+export async function loader({ request }: { request: Request }) {
+  const session = await getSession(request.headers.get("Cookie"));
+  const message = session.get("flashMessage") || null;
+  return json(
+    { message },
+    {
+      headers: {
+        // only necessary with cookieSessionStorage
+        "Set-Cookie": await commitSession(session),
+      },
+    }
+  );
+}
 
 export default function AppLayout() {
+  const { message } = useLoaderData<typeof loader>();
   const [opened, { toggle }] = useDisclosure();
+
+  useEffect(() => {
+    if (message) {
+      showNotification({
+        autoClose: 5000,
+        color: message.type === "success" ? "charcoal.6" : "bitterSweet.6",
+        message: message.message,
+      });
+    }
+  }, [message]);
+
   return (
     <AppShell
       header={{ height: 60 }}

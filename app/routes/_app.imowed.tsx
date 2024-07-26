@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   Container,
@@ -254,7 +255,9 @@ export default function Imowed() {
             <CreditCard key={credit.id} details={credit as CreditProps} />
           ))}
         </Container>
-      ) : null}
+      ) : (
+        <Alert>Nobody owes you money</Alert>
+      )}
       <Modal opened={opened} onClose={close} centered title="Debt Request">
         {modalContent}
       </Modal>

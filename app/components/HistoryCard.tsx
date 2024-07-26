@@ -1,7 +1,13 @@
 import { Text, Card, Stack, Table } from "@mantine/core";
 import { HistoryProps } from "~/routes/_app.imowed_.history";
 
-export default function HistoryCard({ details }: { details: HistoryProps }) {
+export default function HistoryCard({
+  details,
+  type,
+}: {
+  details: HistoryProps;
+  type: string;
+}) {
   return (
     <Card bg="green.9" c="white" my="md">
       <Table>
@@ -11,7 +17,11 @@ export default function HistoryCard({ details }: { details: HistoryProps }) {
               <Text>Who</Text>
             </Table.Td>
             <Table.Td>
-              <Text>{details.debtor.username}</Text>
+              {type === "credit" ? (
+                <Text>{details.debtor?.username}</Text>
+              ) : (
+                <Text>{details.creditor?.username}</Text>
+              )}
             </Table.Td>
           </Table.Tr>
           <Table.Tr>

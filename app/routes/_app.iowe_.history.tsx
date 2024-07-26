@@ -15,40 +15,21 @@ import { requireUser } from "~/auth.server";
 import { DatePickerInput } from "@mantine/dates";
 import HistoryCard from "~/components/HistoryCard";
 import { FiArrowLeft, FiMeh } from "react-icons/fi";
+import { HistoryProps } from "./_app.imowed_.history";
 const prisma = new PrismaClient();
-
-export type HistoryProps = {
-  id: number;
-  amount: number;
-  creditorId: number;
-  currency: string;
-  title: string;
-  description: string;
-  isPaidInFull: boolean;
-  debtorId: number;
-  debtor?: {
-    username: string;
-  };
-  creditor?: {
-    username: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-  message?: string;
-};
 
 type SearchedHistory = HistoryProps[] | { message: string };
 
 export async function loader({ request }: { request: Request }) {
   const sessionUser = await requireUser(request);
 
-  const creditHistory = await prisma.debt.findMany({
+  const debitHistory = await prisma.debt.findMany({
     where: {
-      creditorId: sessionUser.userId,
+      debtorId: sessionUser.userId,
       isPaidInFull: true,
     },
     include: {
-      debtor: {
+      creditor: {
         select: {
           username: true,
         },
@@ -60,7 +41,7 @@ export async function loader({ request }: { request: Request }) {
     take: 10,
   });
 
-  return { creditHistory };
+  return { debitHistory };
 }
 
 export async function action({ request }: { request: Request }) {
@@ -77,7 +58,7 @@ export async function action({ request }: { request: Request }) {
     ).split(" – ");
     const searchedHistory = await prisma.debt.findMany({
       where: {
-        creditorId: sessionUser.userId,
+        debtorId: sessionUser.userId,
         isPaidInFull: true,
         updatedAt: {
           gte: startDateString as unknown as string,
@@ -85,7 +66,7 @@ export async function action({ request }: { request: Request }) {
         },
       },
       include: {
-        debtor: {
+        creditor: {
           select: {
             username: true,
           },
@@ -106,8 +87,8 @@ export async function action({ request }: { request: Request }) {
   }
 }
 
-export default function ImowedHistory() {
-  const { creditHistory } = useLoaderData<typeof loader>();
+export default function IoweHistory() {
+  const { debitHistory } = useLoaderData<typeof loader>();
   const searchedHistory = useActionData<SearchedHistory>();
 
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
@@ -123,15 +104,15 @@ export default function ImowedHistory() {
     <Box>
       <Center>
         <Flex gap="md">
-          <Button color="platinum.9" component="a" href="/imowed">
+          <Button color="platinum.9" component="a" href="/iowe">
             <FiArrowLeft />
           </Button>
           <Title order={2} mb="md">
-            Credit History
+            Debit History
           </Title>
         </Flex>
       </Center>
-      {creditHistory.length > 0 ? (
+      {debitHistory.length > 0 ? (
         <>
           <Card withBorder bg="charcoal.5" c="white">
             <Card.Section withBorder p="md">
@@ -178,7 +159,7 @@ export default function ImowedHistory() {
                 Search results:
               </Title>
               {searchedHistory.map((history) => (
-                <HistoryCard type="credit" key={history.id} details={history} />
+                <HistoryCard type="debit" key={history.id} details={history} />
               ))}
             </Box>
           ) : searchedHistory &&
@@ -195,13 +176,13 @@ export default function ImowedHistory() {
             </Title>
           ) : null}
           {searchedHistory === undefined &&
-            creditHistory.map((history) => (
-              <HistoryCard type="credit" key={history.id} details={history} />
+            debitHistory.map((history) => (
+              <HistoryCard type="debit" key={history.id} details={history} />
             ))}
         </>
       ) : (
         <Alert color="red" title="No history found" mt="md" icon={<FiMeh />}>
-          You do not have any credit history
+          You do not have any debit history
         </Alert>
       )}
     </Box>

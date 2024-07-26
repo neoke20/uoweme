@@ -7,6 +7,7 @@ import {
   NumberFormatter,
   Stack,
   Text,
+  Title,
 } from "@mantine/core";
 import { useFetcher } from "@remix-run/react";
 import { PendingRequestProps } from "~/routes/_app.imowed";
@@ -47,6 +48,9 @@ export default function PendingRequestDrawer({
   };
   return (
     <Box>
+      <Center>
+        <Title order={2}>Pending Requests</Title>
+      </Center>
       {requests.map((request) => {
         return (
           <Card

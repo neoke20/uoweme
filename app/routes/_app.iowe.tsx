@@ -3,7 +3,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { PrismaClient } from "@prisma/client";
 import { useLoaderData } from "@remix-run/react";
 import { useState } from "react";
-import { FiInfo } from "react-icons/fi";
+import { FiHardDrive, FiInfo } from "react-icons/fi";
 import { requireUser } from "~/auth.server";
 import PendingRequestDrawer from "~/components/PendingRequestDrawer";
 import { PendingRequestProps } from "./_app.imowed";
@@ -128,6 +128,16 @@ export default function Iowe() {
       <Title order={2} ta="center" my="md">
         What I owe
       </Title>
+      <Button
+        fullWidth
+        mb="sm"
+        color="platinum.9"
+        leftSection={<FiHardDrive />}
+        component="a"
+        href="iowe/history"
+      >
+        History
+      </Button>
       {pendingDebitList.length > 0 ? (
         <Button
           fullWidth

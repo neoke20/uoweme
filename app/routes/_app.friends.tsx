@@ -18,6 +18,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
 import FriendshipRequestSentDrawer from "~/components/FriendshipRequestSentDrawer";
 import FriendshipRequestReceivedDrawer from "~/components/FriendshipRequestReceivedDrawer";
+import { commitSession, getSession } from "~/session.server";
 
 const prisma = new PrismaClient();
 
@@ -117,6 +118,7 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export async function action({ request }: { request: Request }) {
+  const session = await getSession(request.headers.get("Cookie"));
   const formData = await request.formData();
   const username = formData.get("username");
   const formId = formData.get("formId");
@@ -125,7 +127,7 @@ export async function action({ request }: { request: Request }) {
   if (formId === "searchFriends") {
     const user = await prisma.user.findUnique({
       where: {
-        username: username?.toString(),
+        username: username?.toString().toLowerCase(),
       },
       select: {
         id: true,
@@ -166,13 +168,37 @@ export async function action({ request }: { request: Request }) {
         receiverId: parseInt(friendshipUserId as unknown as string),
       },
     });
-    if (existingRequest) {
+    const existingFriendship = await prisma.friendship.findFirst({
+      where: {
+        userId: currentUser.userId,
+        friend: parseInt(friendshipUserId as unknown as string),
+      },
+    });
+    if (existingFriendship) {
+      session.flash("flashMessage", {
+        type: "error",
+        message: `You are already friends with that user`,
+      });
       return json(
+        {},
         {
-          type: "friendshipRequestAlreadySent",
-        },
+          headers: {
+            "Set-Cookie": await commitSession(session),
+          },
+        }
+      );
+    }
+    if (existingRequest) {
+      session.flash("flashMessage", {
+        type: "error",
+        message: `You already sent a request to that user`,
+      });
+      return json(
+        {},
         {
-          status: 401,
+          headers: {
+            "Set-Cookie": await commitSession(session),
+          },
         }
       );
     } else {

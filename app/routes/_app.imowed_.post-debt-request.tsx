@@ -5,6 +5,7 @@ import {
   json,
   redirect,
   useLoaderData,
+  useNavigation,
   useSubmit,
 } from "@remix-run/react";
 import { z } from "zod";
@@ -148,6 +149,9 @@ export default function SendDebtRequest() {
     event.preventDefault();
   };
 
+  const navigation = useNavigation();
+  const submitting = navigation.state === "submitting";
+
   return (
     <Box>
       <Form method="post" onSubmit={handlePostDebtRequest}>
@@ -194,7 +198,13 @@ export default function SendDebtRequest() {
           minRows={2}
           maxLength={250}
         />
-        <Button type="submit" color="platinum.4" fullWidth my="md">
+        <Button
+          type="submit"
+          color="platinum.4"
+          fullWidth
+          my="md"
+          loading={submitting}
+        >
           Send request
         </Button>
       </Form>

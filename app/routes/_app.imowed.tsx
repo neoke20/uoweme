@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Container,
-  Drawer,
   Flex,
   Stack,
   Title,
@@ -13,9 +12,7 @@ import { useLoaderData } from "@remix-run/react";
 import { requireUser } from "~/auth.server";
 import CreditCard from "~/components/CreditCard";
 import { FiPlus, FiInfo, FiHardDrive } from "react-icons/fi";
-import { useDisclosure } from "@mantine/hooks";
-import { useState } from "react";
-import PendingRequestDrawer from "~/components/PendingRequestDrawer";
+
 const prisma = new PrismaClient();
 
 export type CreditProps = {
@@ -187,16 +184,6 @@ export async function action({ request }: { request: Request }) {
 export default function Imowed() {
   const { creditList, pendingCreditList } = useLoaderData<typeof loader>();
 
-  const [openedDrawer, { open: openDrawer, close: closeDrawer }] =
-    useDisclosure(false);
-  const [drawerContent, setDrawerContent] = useState<DrawerContent>();
-  type DrawerContent = React.ReactElement;
-
-  const handleDrawerOpen = (content: DrawerContent) => {
-    setDrawerContent(content);
-    openDrawer();
-  };
-
   return (
     <Box>
       <Title order={2} ta="center" my="md">
@@ -228,17 +215,8 @@ export default function Imowed() {
             fullWidth
             color="platinum.4"
             leftSection={<FiInfo />}
-            onClick={() =>
-              handleDrawerOpen(
-                <PendingRequestDrawer
-                  requests={
-                    pendingCreditList as unknown as PendingRequestProps[]
-                  }
-                  close={closeDrawer}
-                  type="credit"
-                />
-              )
-            }
+            component="a"
+            href="imowed/pending-requests"
           >
             Pending Requests
           </Button>
@@ -253,9 +231,6 @@ export default function Imowed() {
       ) : (
         <Alert my="md">Nobody owes you money</Alert>
       )}
-      <Drawer opened={openedDrawer} onClose={closeDrawer}>
-        {drawerContent}
-      </Drawer>
     </Box>
   );
 }

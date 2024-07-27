@@ -143,15 +143,8 @@ export default function Iowe() {
           fullWidth
           color="platinum.4"
           leftSection={<FiInfo />}
-          onClick={() =>
-            handleDrawerOpen(
-              <PendingRequestDrawer
-                requests={pendingDebitList as unknown as PendingRequestProps[]}
-                close={closeDrawer}
-                type="debt"
-              />
-            )
-          }
+          component="a"
+          href="/iowe/pending-requests"
         >
           Pending Requests
         </Button>

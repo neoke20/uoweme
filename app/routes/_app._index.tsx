@@ -104,7 +104,7 @@ export default function Index() {
         </Alert>
       ) : null}
       {setNotificationsValues &&
-      setNotificationsValues.debtRequestsCount > 0 ? (
+      setNotificationsValues.paymentRequestCount === 1 ? (
         <Alert color="charcoal.6" my="md" variant="outline">
           <Stack>
             <Text ta="center">

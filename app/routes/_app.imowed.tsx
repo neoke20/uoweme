@@ -3,9 +3,7 @@ import {
   Box,
   Button,
   Container,
-  Drawer,
   Flex,
-  Modal,
   Stack,
   Title,
 } from "@mantine/core";
@@ -14,10 +12,7 @@ import { useLoaderData } from "@remix-run/react";
 import { requireUser } from "~/auth.server";
 import CreditCard from "~/components/CreditCard";
 import { FiPlus, FiInfo, FiHardDrive } from "react-icons/fi";
-import { useDisclosure } from "@mantine/hooks";
-import { useState } from "react";
-import DebtRequestCard from "~/components/DebtRequestCard";
-import PendingRequestDrawer from "~/components/PendingRequestDrawer";
+
 const prisma = new PrismaClient();
 
 export type CreditProps = {
@@ -187,26 +182,7 @@ export async function action({ request }: { request: Request }) {
 }
 
 export default function Imowed() {
-  const { creditList, friends, pendingCreditList } =
-    useLoaderData<typeof loader>();
-  const [opened, { open, close }] = useDisclosure(false);
-  const [modalContent, setModalContent] = useState<ModalContent>();
-  type ModalContent = React.ReactElement;
-
-  const handleModalOpen = (content: ModalContent) => {
-    setModalContent(content);
-    open();
-  };
-
-  const [openedDrawer, { open: openDrawer, close: closeDrawer }] =
-    useDisclosure(false);
-  const [drawerContent, setDrawerContent] = useState<DrawerContent>();
-  type DrawerContent = React.ReactElement;
-
-  const handleDrawerOpen = (content: DrawerContent) => {
-    setDrawerContent(content);
-    openDrawer();
-  };
+  const { creditList, pendingCreditList } = useLoaderData<typeof loader>();
 
   return (
     <Box>
@@ -219,14 +195,8 @@ export default function Imowed() {
             fullWidth
             color="platinum.4"
             leftSection={<FiPlus />}
-            onClick={() =>
-              handleModalOpen(
-                <DebtRequestCard
-                  friends={friends as FriendsProps[]}
-                  close={close}
-                />
-              )
-            }
+            component="a"
+            href="/imowed/post-debt-request"
           >
             Send Request
           </Button>
@@ -245,17 +215,8 @@ export default function Imowed() {
             fullWidth
             color="platinum.4"
             leftSection={<FiInfo />}
-            onClick={() =>
-              handleDrawerOpen(
-                <PendingRequestDrawer
-                  requests={
-                    pendingCreditList as unknown as PendingRequestProps[]
-                  }
-                  close={closeDrawer}
-                  type="credit"
-                />
-              )
-            }
+            component="a"
+            href="imowed/pending-requests"
           >
             Pending Requests
           </Button>
@@ -270,12 +231,6 @@ export default function Imowed() {
       ) : (
         <Alert my="md">Nobody owes you money</Alert>
       )}
-      <Modal opened={opened} onClose={close} centered title="Debt Request">
-        {modalContent}
-      </Modal>
-      <Drawer opened={openedDrawer} onClose={closeDrawer}>
-        {drawerContent}
-      </Drawer>
     </Box>
   );
 }

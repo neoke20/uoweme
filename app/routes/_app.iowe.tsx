@@ -1,13 +1,10 @@
-import { Box, Button, Drawer, Title } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import { Box, Button, Title } from "@mantine/core";
 import { PrismaClient } from "@prisma/client";
-import { useLoaderData } from "@remix-run/react";
-import { useState } from "react";
+import { json, useLoaderData } from "@remix-run/react";
 import { FiHardDrive, FiInfo } from "react-icons/fi";
 import { requireUser } from "~/auth.server";
-import PendingRequestDrawer from "~/components/PendingRequestDrawer";
-import { PendingRequestProps } from "./_app.imowed";
 import DebtCard from "~/components/DebtCard";
+import { commitSession, getSession } from "~/session.server";
 const prisma = new PrismaClient();
 
 export type DebtProps = {
@@ -67,6 +64,9 @@ export async function loader({ request }: { request: Request }) {
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
   const formId = formData.get("formId");
+  const session = await getSession(request.headers.get("Cookie"));
+
+  let errorCount = 0;
 
   if (formId === "paidInFull") {
     const { debtId } = Object.fromEntries(formData);
@@ -90,6 +90,20 @@ export async function action({ request }: { request: Request }) {
 
   if (formId === "paidPartially") {
     const { partialAmount, debtId } = Object.fromEntries(formData);
+    if (partialAmount == "0") {
+      session.flash("flashMessage", {
+        type: "error",
+        message: `Partial amount cannot be 0.`,
+      });
+      return json(
+        {},
+        {
+          headers: {
+            "Set-Cookie": await commitSession(session),
+          },
+        }
+      );
+    }
     const currentDebt = await prisma.debt.findUnique({
       where: {
         id: parseInt(debtId as string),
@@ -98,13 +112,39 @@ export async function action({ request }: { request: Request }) {
     if (!currentDebt) {
       return new Response("Debt not found", { status: 404 });
     } else {
-      await prisma.debtPaymentRequest.create({
-        data: {
-          debtId: parseInt(debtId as string),
-          debtorId: currentDebt?.debtorId,
-          amount: parseInt(partialAmount as string),
+      try {
+        await prisma.debtPaymentRequest.create({
+          data: {
+            debtId: parseInt(debtId as string),
+            debtorId: currentDebt?.debtorId,
+            amount: parseInt(partialAmount as string),
+          },
+        });
+      } catch (error) {
+        errorCount++;
+      }
+
+      if (errorCount > 0) {
+        session.flash("flashMessage", {
+          type: "error",
+          message: `Could not send payment request.`,
+        });
+      } else {
+        session.flash("flashMessage", {
+          type: "success",
+          message: `Payment request sent successfully.`,
+        });
+      }
+      return json(
+        {
+          errorCount: errorCount,
         },
-      });
+        {
+          headers: {
+            "Set-Cookie": await commitSession(session),
+          },
+        }
+      );
     }
   }
   return null;
@@ -112,16 +152,6 @@ export async function action({ request }: { request: Request }) {
 
 export default function Iowe() {
   const { pendingDebitList, debitList } = useLoaderData<typeof loader>();
-
-  const [openedDrawer, { open: openDrawer, close: closeDrawer }] =
-    useDisclosure(false);
-  const [drawerContent, setDrawerContent] = useState<DrawerContent>();
-  type DrawerContent = React.ReactElement;
-
-  const handleDrawerOpen = (content: DrawerContent) => {
-    setDrawerContent(content);
-    openDrawer();
-  };
 
   return (
     <div>
@@ -143,15 +173,8 @@ export default function Iowe() {
           fullWidth
           color="platinum.4"
           leftSection={<FiInfo />}
-          onClick={() =>
-            handleDrawerOpen(
-              <PendingRequestDrawer
-                requests={pendingDebitList as unknown as PendingRequestProps[]}
-                close={closeDrawer}
-                type="debt"
-              />
-            )
-          }
+          component="a"
+          href="/iowe/pending-requests"
         >
           Pending Requests
         </Button>
@@ -162,13 +185,6 @@ export default function Iowe() {
             <DebtCard debt={debt as unknown as DebtProps} />
           </Box>
         ))}
-      <Drawer
-        opened={openedDrawer}
-        onClose={closeDrawer}
-        title="Pending Requests"
-      >
-        {drawerContent}
-      </Drawer>
     </div>
   );
 }

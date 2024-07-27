@@ -10,7 +10,7 @@ import {
   NumberInput,
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useNavigation } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { FiAlertCircle, FiCheck, FiX } from "react-icons/fi";
 import { DebtProps } from "~/routes/_app.iowe";
@@ -78,6 +78,9 @@ export default function DebtCard({ debt }: { debt: DebtProps }) {
       closeOnConfirm: true,
       closeOnCancel: true,
     });
+
+  const navigation = useNavigation();
+  const submitting = navigation.state === "submitting";
 
   return (
     <Card key={debt.id} shadow="md" p="md">
@@ -179,7 +182,11 @@ export default function DebtCard({ debt }: { debt: DebtProps }) {
           <fetcher.Form method="post" ref={formRefFull}>
             <input hidden name="formId" defaultValue="paidInFull" />
             <input hidden name="debtId" defaultValue={debt.id} />
-            <Button color="charcoal.8" onClick={openPaidInFullModal}>
+            <Button
+              color="charcoal.8"
+              onClick={openPaidInFullModal}
+              loading={submitting}
+            >
               Paid in full
             </Button>
           </fetcher.Form>
@@ -197,7 +204,11 @@ export default function DebtCard({ debt }: { debt: DebtProps }) {
                   max={debt.amount}
                 />
               </Flex>
-              <Button color="payneGray.4" onClick={openPaidPartiallyModal}>
+              <Button
+                color="payneGray.4"
+                onClick={openPaidPartiallyModal}
+                loading={submitting}
+              >
                 Paid partially
               </Button>
             </Flex>

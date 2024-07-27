@@ -5,7 +5,6 @@ import {
   Container,
   Drawer,
   Flex,
-  Modal,
   Stack,
   Title,
 } from "@mantine/core";
@@ -16,7 +15,6 @@ import CreditCard from "~/components/CreditCard";
 import { FiPlus, FiInfo, FiHardDrive } from "react-icons/fi";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
-import DebtRequestCard from "~/components/DebtRequestCard";
 import PendingRequestDrawer from "~/components/PendingRequestDrawer";
 const prisma = new PrismaClient();
 
@@ -187,16 +185,7 @@ export async function action({ request }: { request: Request }) {
 }
 
 export default function Imowed() {
-  const { creditList, friends, pendingCreditList } =
-    useLoaderData<typeof loader>();
-  const [opened, { open, close }] = useDisclosure(false);
-  const [modalContent, setModalContent] = useState<ModalContent>();
-  type ModalContent = React.ReactElement;
-
-  const handleModalOpen = (content: ModalContent) => {
-    setModalContent(content);
-    open();
-  };
+  const { creditList, pendingCreditList } = useLoaderData<typeof loader>();
 
   const [openedDrawer, { open: openDrawer, close: closeDrawer }] =
     useDisclosure(false);
@@ -219,14 +208,8 @@ export default function Imowed() {
             fullWidth
             color="platinum.4"
             leftSection={<FiPlus />}
-            onClick={() =>
-              handleModalOpen(
-                <DebtRequestCard
-                  friends={friends as FriendsProps[]}
-                  close={close}
-                />
-              )
-            }
+            component="a"
+            href="/imowed/post-debt-request"
           >
             Send Request
           </Button>
@@ -270,9 +253,6 @@ export default function Imowed() {
       ) : (
         <Alert my="md">Nobody owes you money</Alert>
       )}
-      <Modal opened={opened} onClose={close} centered title="Debt Request">
-        {modalContent}
-      </Modal>
       <Drawer opened={openedDrawer} onClose={closeDrawer}>
         {drawerContent}
       </Drawer>

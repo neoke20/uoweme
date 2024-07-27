@@ -5,17 +5,6 @@ import { commitSession, getSession } from "~/session.server";
 const prisma = new PrismaClient();
 
 export async function action({ request }: { request: Request }) {
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "https://uoweme.netlify.app",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    });
-  }
-
   const session = await getSession(request.headers.get("Cookie"));
   let errorCount = 0;
   try {
@@ -60,9 +49,6 @@ export async function action({ request }: { request: Request }) {
     {
       headers: {
         "Set-Cookie": await commitSession(session),
-        "Access-Control-Allow-Origin": "https://uoweme.netlify.app", // Update with your domain
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
       },
     }
   );

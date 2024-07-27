@@ -5,19 +5,29 @@ import { commitSession, getSession } from "~/session.server";
 const prisma = new PrismaClient();
 
 export async function action({ request }: { request: Request }) {
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "https://uoweme.netlify.app",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
+  }
+
   const session = await getSession(request.headers.get("Cookie"));
-  const sessionUser = await requireUser(request);
-  const formData = await request.json();
-  const { amount, currency, description, title, receiver } = formData.values;
-  const debtReceiver = await prisma.user.findUnique({
-    where: {
-      username: receiver,
-    },
-  });
-
   let errorCount = 0;
-
   try {
+    const formData = await request.json();
+    const { amount, currency, description, title, receiver } = formData.values;
+    const sessionUser = await requireUser(request);
+    const debtReceiver = await prisma.user.findUnique({
+      where: {
+        username: receiver,
+      },
+    });
+
     await prisma.debtRequest.create({
       data: {
         amount: Number(amount),
@@ -35,12 +45,12 @@ export async function action({ request }: { request: Request }) {
   if (errorCount > 0) {
     session.flash("flashMessage", {
       type: "error",
-      message: `Could not send the request to ${receiver}.`,
+      message: `Could not send the request.`,
     });
   } else {
     session.flash("flashMessage", {
       type: "success",
-      message: `Debt request sent successfully to ${receiver}.`,
+      message: `Debt request sent successfully.`,
     });
   }
   return json(
@@ -50,7 +60,7 @@ export async function action({ request }: { request: Request }) {
     {
       headers: {
         "Set-Cookie": await commitSession(session),
-        "Access-Control-Allow-Origin": "https://uoweme.netlify.app",
+        "Access-Control-Allow-Origin": "https://uoweme.netlify.app", // Update with your domain
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
       },

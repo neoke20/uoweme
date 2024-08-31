@@ -1,6 +1,6 @@
 import { requireUser } from "~/auth.server";
 import { Currency, PrismaClient } from "@prisma/client";
-import { Form, redirect, useLoaderData, useNavigation } from "@remix-run/react";
+import { Form, json, useLoaderData, useNavigation } from "@remix-run/react";
 import {
   Text,
   Box,
@@ -86,11 +86,14 @@ export async function action({ request }: { request: Request }) {
         message: `Debt request accepted successfully.`,
       });
     }
-    return redirect("/iowe", {
-      headers: {
-        "Set-Cookie": await commitSession(session),
-      },
-    });
+    return json(
+      {},
+      {
+        headers: {
+          "Set-Cookie": await commitSession(session),
+        },
+      }
+    );
   }
 
   if (intent === "reject") {
@@ -117,11 +120,14 @@ export async function action({ request }: { request: Request }) {
         message: `Debt request cancelled successfully.`,
       });
     }
-    return redirect("/iowe", {
-      headers: {
-        "Set-Cookie": await commitSession(session),
-      },
-    });
+    return json(
+      {},
+      {
+        headers: {
+          "Set-Cookie": await commitSession(session),
+        },
+      }
+    );
   }
 }
 
@@ -150,6 +156,7 @@ export default function IOwePendingRequests() {
               </Card.Section>
               <Stack key={request.id} gap="sm" p="md">
                 <Text>{request.title}</Text>
+                <Text>{request.description}</Text>
                 <NumberFormatter
                   prefix={`${request.currency} `}
                   value={request.amount}

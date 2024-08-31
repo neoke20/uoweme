@@ -156,6 +156,7 @@ export default function IOwePendingRequests() {
               </Card.Section>
               <Stack key={request.id} gap="sm" p="md">
                 <Text>{request.title}</Text>
+                <Text>{request.description}</Text>
                 <NumberFormatter
                   prefix={`${request.currency} `}
                   value={request.amount}

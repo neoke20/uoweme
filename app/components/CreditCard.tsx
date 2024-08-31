@@ -19,8 +19,9 @@ import { useRef } from "react";
 export default function CreditCard({ details }: { details: CreditProps }) {
   const fetcher = useFetcher();
   const formRef = useRef<HTMLFormElement>(null);
-  const ConfirmPaymentRef = useRef<HTMLFormElement>(null);
   const alertIcon = <FiAlertCircle />;
+
+  const formRefs = useRef<Map<number, HTMLFormElement>>(new Map());
 
   const openModal = () =>
     modals.openConfirmModal({
@@ -41,7 +42,7 @@ export default function CreditCard({ details }: { details: CreditProps }) {
       closeOnCancel: true,
     });
 
-  const openPaymentConfirmationModal = () =>
+  const openPaymentConfirmationModal = (paymentRequestId: number) =>
     modals.openConfirmModal({
       title: "Accept this payment?",
       children: (
@@ -53,7 +54,10 @@ export default function CreditCard({ details }: { details: CreditProps }) {
       labels: { confirm: "Yes, accept the payment", cancel: "No, not yet" },
       confirmProps: { type: "submit", color: "platinum.4" },
       onConfirm: () => {
-        ConfirmPaymentRef.current!.submit();
+        const form = formRefs.current.get(paymentRequestId);
+        if (form) {
+          form.submit(); // Submit the correct form instance
+        }
       },
       closeOnConfirm: true,
       closeOnCancel: true,
@@ -125,7 +129,13 @@ export default function CreditCard({ details }: { details: CreditProps }) {
                       </Table.Tr>
                     </Table.Tbody>
                   </Table>
-                  <fetcher.Form method="post" ref={ConfirmPaymentRef}>
+                  <fetcher.Form
+                    method="post"
+                    ref={(el) => {
+                      if (el) formRefs.current.set(paymentRequest.id, el);
+                      else formRefs.current.delete(paymentRequest.id);
+                    }}
+                  >
                     <input hidden name="formId" defaultValue="acceptPayment" />
                     <input
                       hidden
@@ -143,7 +153,9 @@ export default function CreditCard({ details }: { details: CreditProps }) {
                       my="sm"
                       leftSection={<FiCheck />}
                       color="charcoal.6"
-                      onClick={openPaymentConfirmationModal}
+                      onClick={() =>
+                        openPaymentConfirmationModal(paymentRequest.id)
+                      }
                     >
                       Confirm this payment
                     </Button>

@@ -139,7 +139,7 @@ export async function action({ request }: { request: Request }) {
 
   if (formId === "acceptPayment") {
     const { paymentRequestId, debtId, amount } = Object.fromEntries(formData);
-    console.log(paymentRequestId, debtId, amount);
+
     await prisma.debtPaymentRequest.update({
       where: {
         id: parseInt(paymentRequestId as string),
@@ -153,8 +153,27 @@ export async function action({ request }: { request: Request }) {
         id: parseInt(debtId as string),
       },
     });
-    if (currentDebt) {
-      const amountLeft = currentDebt.amount - parseInt(amount as string);
+    if (currentDebt && currentDebt.amount <= parseInt(amount as string)) {
+      await prisma.debtPaymentRequest.updateMany({
+        where: {
+          debtId: parseInt(debtId as string),
+        },
+        data: {
+          isAccepted: true,
+        },
+      });
+      await prisma.debt.update({
+        where: {
+          id: parseInt(debtId as string),
+        },
+        data: {
+          isPaidInFull: true,
+          amount: 0,
+        },
+      });
+    } else {
+      const amountLeft =
+        (currentDebt?.amount as number) - parseInt(amount as string);
       await prisma.debt.update({
         where: {
           id: parseInt(debtId as string),
@@ -163,16 +182,6 @@ export async function action({ request }: { request: Request }) {
           amount: amountLeft,
         },
       });
-      if (amountLeft === 0) {
-        await prisma.debt.update({
-          where: {
-            id: parseInt(debtId as string),
-          },
-          data: {
-            isPaidInFull: true,
-          },
-        });
-      }
     }
     return new Response(null, {
       status: 303,

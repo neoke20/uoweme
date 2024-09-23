@@ -97,7 +97,11 @@ export default function Index() {
                 ? " requests"
                 : " request"}
             </Text>
-            <Button color="charcoal.6" component="a" href="iowe">
+            <Button
+              color="charcoal.6"
+              component="a"
+              href="iowe/pending-requests"
+            >
               Check
             </Button>
           </Stack>

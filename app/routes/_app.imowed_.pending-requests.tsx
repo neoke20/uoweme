@@ -9,8 +9,10 @@ import {
   Center,
   NumberFormatter,
   Stack,
+  Flex,
+  Title,
 } from "@mantine/core";
-import { FiTrash } from "react-icons/fi";
+import { FiArrowLeft, FiTrash } from "react-icons/fi";
 import { commitSession, getSession } from "~/session.server";
 const prisma = new PrismaClient();
 
@@ -76,6 +78,16 @@ export default function PendingRequest() {
   const submitting = navigation.state === "submitting";
   return (
     <Box>
+      <Center>
+        <Flex gap="md">
+          <Button color="platinum.9" component="a" href="/imowed">
+            <FiArrowLeft />
+          </Button>
+          <Title order={2} mb="md">
+            Requests
+          </Title>
+        </Flex>
+      </Center>
       {pendingRequests.length > 0 ? (
         <>
           {pendingRequests.map((request) => (

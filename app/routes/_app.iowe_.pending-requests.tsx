@@ -10,6 +10,7 @@ import {
   NumberFormatter,
   Stack,
   Flex,
+  Title,
 } from "@mantine/core";
 import { FiArrowLeft, FiCheck, FiTrash } from "react-icons/fi";
 import { commitSession, getSession } from "~/session.server";
@@ -138,11 +139,16 @@ export default function IOwePendingRequests() {
   const submitting = navigation.state === "submitting";
   return (
     <Box>
-      <Flex justify="flex-end">
-        <Button color="platinum.9" component="a" href="/iowe">
-          <FiArrowLeft /> To What I Owe
-        </Button>
-      </Flex>
+      <Center>
+        <Flex gap="md">
+          <Button color="platinum.9" component="a" href="/iowe">
+            <FiArrowLeft />
+          </Button>
+          <Title order={2} mb="md">
+            Requests
+          </Title>
+        </Flex>
+      </Center>
       {pendingDebitList.length > 0 ? (
         <>
           {pendingDebitList.map((request) => (

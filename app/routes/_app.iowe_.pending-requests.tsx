@@ -11,7 +11,7 @@ import {
   Stack,
   Flex,
 } from "@mantine/core";
-import { FiCheck, FiTrash } from "react-icons/fi";
+import { FiArrowLeft, FiCheck, FiTrash } from "react-icons/fi";
 import { commitSession, getSession } from "~/session.server";
 const prisma = new PrismaClient();
 
@@ -138,6 +138,11 @@ export default function IOwePendingRequests() {
   const submitting = navigation.state === "submitting";
   return (
     <Box>
+      <Flex justify="flex-end">
+        <Button color="platinum.9" component="a" href="/iowe">
+          <FiArrowLeft /> To What I Owe
+        </Button>
+      </Flex>
       {pendingDebitList.length > 0 ? (
         <>
           {pendingDebitList.map((request) => (

@@ -59,7 +59,6 @@ export default function Settings() {
     )(event);
     event.preventDefault();
   };
-  console.log(user);
   return (
     <Box>
       <Form method="post" onSubmit={handleSettingsFormSubmit}>

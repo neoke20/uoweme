@@ -43,7 +43,6 @@ export default function Index() {
   const { user } = useLoaderData<typeof loader>();
   const { setNotificationsValues } =
     useOutletContext() as OutletContextInterface;
-  console.log("Test value", setNotificationsValues);
   return (
     <Box>
       <Title order={2} ta="center">

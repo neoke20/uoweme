@@ -7,7 +7,7 @@
     "build": "prisma generate && remix vite:build",
     "dev": "remix vite:dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
-    "start": "netlify serve",
+    "start": "node server.js",
     "typecheck": "tsc"
   },
   "dependencies": {
@@ -17,8 +17,6 @@
     "@mantine/hooks": "^7.11.0",
     "@mantine/modals": "^7.11.0",
     "@mantine/notifications": "^7.11.0",
-    "@netlify/functions": "^2.6.0",
-    "@netlify/remix-adapter": "^2.3.1",
     "@prisma/client": "^5.22.0",
     "@remix-run/css-bundle": "^2.10.0",
     "@remix-run/node": "^2.10.0",
@@ -58,7 +56,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "description": "- [Remix Docs](https://remix.run/docs) - [Netlify Functions Overview](https://docs.netlify.com/functions/overview)",
+  "description": "- [Remix Docs](https://remix.run/docs)",
   "version": "1.0.0",
   "main": "index.js",
   "keywords": [],

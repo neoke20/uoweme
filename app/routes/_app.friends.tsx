@@ -263,7 +263,6 @@ export default function Friends() {
   const { friendships, friendshipRequestsSent, friendshipRequestsReceived } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<actionDataProps>();
-  console.log({ friendshipRequestsSent, friendshipRequestsReceived });
   const alertIcon = <FiAlertCircle />;
   const atSignIcon = <FiAtSign />;
   const navigation = useNavigation();

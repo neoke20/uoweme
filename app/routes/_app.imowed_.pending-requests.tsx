@@ -72,7 +72,6 @@ export async function action({ request }: { request: Request }) {
 
 export default function PendingRequest() {
   const { pendingRequests } = useLoaderData<typeof loader>();
-  console.log(pendingRequests);
 
   const navigation = useNavigation();
   const submitting = navigation.state === "submitting";
